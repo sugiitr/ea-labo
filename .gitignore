@@ -1,0 +1,17 @@
+# Directories
+.gemini/
+brain/
+logs/
+.system_generated/
+
+# Scripts
+fix_ea.js
+fix_ea_v2.js
+fix_ea_v3.js
+fix_ea_debug.js
+temp/
+/tmp/
+
+# OS Files
+.DS_Store
+Thumbs.db
