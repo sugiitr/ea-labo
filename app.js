@@ -456,6 +456,7 @@ function setupStep0() {
             const id = card.getAttribute('data-template');
             if (id !== null) {
                 applyTemplate(parseInt(id));
+                showEAStep(1);
             }
         });
     });
@@ -1634,7 +1635,14 @@ function setupBacktest() {
 
 function showEAStep(stepNum) {
     if (typeof closeWizard === 'function') closeWizard();
-    // 全ステップを隠す (1-8)
+    
+    // ホーム画面とベースのフローコンテナの表示制御
+    const home = document.getElementById('home-screen');
+    const flow = document.getElementById('ea-flow');
+    if (home) home.classList.add('hidden');
+    if (flow) flow.classList.remove('hidden');
+
+    // 全ステップ（0-8）を確実に隠す
     for (let i = 0; i <= 8; i++) { 
         const s = document.getElementById(`ea-step-${i}`); 
         if (s) {
