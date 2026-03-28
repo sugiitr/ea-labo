@@ -1579,6 +1579,7 @@ function applyStateToUI() {
   setVal('month-start-days', eaState.monthStartDays);
   setVal('month-end-days', eaState.monthEndDays);
   setVal('nanpin-target-profit', eaState.nanpinTargetProfit);
+  if (typeof renderLogicMap === 'function') renderLogicMap();
 }
 
 
@@ -2809,6 +2810,7 @@ function updateConditionList(type) {
 
     listEl.appendChild(item);
   });
+  if (typeof renderLogicMap === 'function') renderLogicMap();
 }
 
 function getDetailName(cat, id) {
@@ -2858,6 +2860,7 @@ function updateExitConditionList() {
     item.appendChild(removeBtn);
     listEl.appendChild(item);
   });
+  if (typeof renderLogicMap === 'function') renderLogicMap();
 }
 
 // ---------- Wizard Navigation ----------
@@ -4505,4 +4508,118 @@ window.showBacktestReport = function(index) {
         modal.classList.add('visible');
         modal.style.display = 'flex';
     }
+};
+
+// ============================================================
+// [A-130] Logic Map Sidebar — 可視化エンジン
+// ============================================================
+function setupLogicSidebar() {
+    const toggleBtn = document.getElementById('logic-sidebar-toggle');
+    const closeBtn = document.getElementById('logic-sidebar-close');
+    
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            const sidebar = document.getElementById('logic-sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('active');
+                if (sidebar.classList.contains('active')) {
+                    renderLogicMap();
+                }
+            }
+        });
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            const sidebar = document.getElementById('logic-sidebar');
+            if (sidebar) sidebar.classList.remove('active');
+        });
+    }
+}
+
+window.renderLogicMap = function() {
+    const container = document.getElementById('logic-map-container');
+    if (!container) return;
+
+    let html = '';
+    const hasBuy = eaState.buyConditions && eaState.buyConditions.length > 0;
+    const hasSell = eaState.sellConditions && eaState.sellConditions.length > 0;
+    const hasExit = eaState.exitConditions && eaState.exitConditions.length > 0;
+
+    if (!hasBuy && !hasSell && !hasExit && !eaState.usePerfectOrder && !eaState.useAdxFilter && !eaState.useTimeFilter) {
+        container.innerHTML = '<p class="empty-msg">条件を設定するとマップが生成されます</p>';
+        return;
+    }
+
+    // 1. エントリー条件セクション
+    if (hasBuy || hasSell) {
+        html += '<div class="logic-node">';
+        html += '<div class="node-title">🔍 エントリー条件 (' + eaState.buyCombine + ')</div>';
+        html += '<div class="node-content">';
+        html += eaState.buyConditions.map(c => '<div class="node-item buy">🟢 Buy: ' + getConditionSimpleDesc(c) + '</div>').join('');
+        html += eaState.sellConditions.map(c => '<div class="node-item sell">🔴 Sell: ' + getConditionSimpleDesc(c) + '</div>').join('');
+        html += '</div></div>';
+        html += '<div class="node-connector">↓</div>';
+    }
+
+    // 2. フィルターセクション
+    let filters = [];
+    if (eaState.useSpreadFilter) filters.push('スプレッド');
+    if (eaState.useTimeFilter) filters.push('時間フィルター');
+    if (eaState.usePerfectOrder) filters.push('パーフェクトオーダー');
+    if (eaState.useAdxFilter) filters.push('ADXフィルター');
+    if (eaState.useDayFilter) filters.push('曜日フィルター');
+
+    if (filters.length > 0) {
+        html += '<div class="logic-node">';
+        html += '<div class="node-title">🛡️ フィルター</div>';
+        html += '<div class="node-content">';
+        html += filters.map(f => '<div class="node-item filter">✅ ' + f + '</div>').join('');
+        html += '</div></div>';
+        html += '<div class="node-connector">↓</div>';
+    }
+
+    // 3. 戦略セクション
+    if (eaState.strategies && eaState.strategies.length > 0) {
+        html += '<div class="logic-node">';
+        html += '<div class="node-title">⚙️ ポジション戦略</div>';
+        html += '<div class="node-content">';
+        html += eaState.strategies.map(s => '<div class="node-item">🔄 ' + s.toUpperCase() + '</div>').join('');
+        html += '</div></div>';
+        html += '<div class="node-connector">↓</div>';
+    }
+
+    // 4. エグジットセクション
+    if (hasExit || eaState.useTrailing || eaState.useAutoClose) {
+        html += '<div class="logic-node">';
+        html += '<div class="node-title">🎯 エグジットルール</div>';
+        html += '<div class="node-content">';
+        if (eaState.useTrailing) html += '<div class="node-item filter">📈 追従決済 (TS)</div>';
+        if (eaState.useAutoClose) html += '<div class="node-item filter">⏱️ 自動決済</div>';
+        html += eaState.exitConditions.map(c => '<div class="node-item sell">🏁 条件決済: ' + getConditionSimpleDesc(c) + '</div>').join('');
+        html += '</div></div>';
+        html += '<div class="node-connector">↓</div>';
+    }
+
+    // 5. Final Action
+    html += '<div class="logic-node" style="border-color: var(--accent-success); border-width: 2px;">';
+    html += '<div class="node-title" style="color: var(--accent-success);">🚀 発注・決済実行</div>';
+    html += '<div class="node-content" style="font-size: 0.8rem; opacity: 0.8;">条件合致により実行されます</div>';
+    html += '</div>';
+
+    container.innerHTML = html;
+};
+
+function getConditionSimpleDesc(c) {
+    if (!c) return '---';
+    const indicator = c.indicator ? c.indicator.toUpperCase() : 'UNKNOWN';
+    const type = c.type ? c.type.replace(/_/g, ' ') : 'CONDITION';
+    return indicator + ' (' + type + ')';
+}
+
+// 初期化時にセットアップをフック
+const originalSetupEAFlow = setupEAFlow;
+setupEAFlow = function() {
+    originalSetupEAFlow();
+    setupLogicSidebar();
 };

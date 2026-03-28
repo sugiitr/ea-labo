@@ -1649,6 +1649,23 @@
 
         <div id="toast-container" class="toast-container"></div>
         <input type="file" id="settings-file-input" accept=".json" class="hidden">
+        <!-- ==================== H-130: Logic Map Sidebar ==================== -->
+        <button id="logic-sidebar-toggle" class="logic-sidebar-toggle">
+            <span class="toggle-icon">🗺️</span>
+            <span class="toggle-text">Logic Map</span>
+        </button>
+
+        <div id="logic-sidebar" class="logic-sidebar">
+            <div class="sidebar-header">
+                <h3>🗺️ ロジックマップ</h3>
+                <button id="logic-sidebar-close" class="sidebar-close">&times;</button>
+            </div>
+            <div class="sidebar-content">
+                <div id="logic-map-container" class="logic-map-container">
+                    <p class="empty-msg">条件を設定するとマップが生成されます</p>
+                </div>
+            </div>
+        </div>
     </div>
     <!-- //END H-110 -->
 
