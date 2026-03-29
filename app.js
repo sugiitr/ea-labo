@@ -3300,31 +3300,23 @@ function setupModals() {
     const wizardModal = document.getElementById('wizard-modal');
     if (wizardModal) wizardModal.addEventListener('click', (e) => { if (e.target === wizardModal) closeWizard(); });
 
-    // バックテスト・レポートモーダルのクローズ処理
+    // バックテスト・レポートモーダルのクローズ処理 (Global Function経由)
     const reportClose = document.getElementById('report-close');
-    const reportModal = document.getElementById('backtest-report-modal');
-
-    const hideReportModal = () => {
-        if (reportModal) {
-            reportModal.classList.remove('visible');
-            reportModal.classList.remove('active');
-            reportModal.style.display = 'none';
-        }
-    };
-
     if (reportClose) {
-        reportClose.addEventListener('click', hideReportModal);
+        // 既存のリスナーがある可能性を考慮し、onclick属性での上書きを優先
+        reportClose.onclick = window.hideBacktestReport;
     }
+    const reportModal = document.getElementById('backtest-report-modal');
     if (reportModal) {
         reportModal.addEventListener('click', (e) => {
-            if (e.target === reportModal) hideReportModal();
+            if (e.target === reportModal) window.hideBacktestReport();
         });
     }
 
     // Escapeキーで全てのモーダルを閉じる
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            hideReportModal();
+            window.hideBacktestReport();
             if (typeof closeWizard === 'function') closeWizard();
             const helpModal = document.getElementById('help-modal');
             if (helpModal) helpModal.classList.remove('active');
@@ -4523,6 +4515,17 @@ window.loadPublicEA = function(id) {
 
 // --- setupToggleCards call is moved into specific function or called at end safely ---
 setupToggleCards();
+
+
+window.hideBacktestReport = function() {
+    const modal = document.getElementById('backtest-report-modal');
+    if (modal) {
+        modal.classList.remove('visible');
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+        console.log('Backtest report modal hidden.');
+    }
+};
 
 window.showBacktestReport = function(index) {
     const history = JSON.parse(localStorage.getItem('ea_backtest_history') || '[]');
