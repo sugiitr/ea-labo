@@ -990,9 +990,10 @@ body {
     height: 100%;
     background: rgba(0, 0, 0, 0.7);
     z-index: 1050;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 20px;
+    overflow-y: auto;
 }
 
 .modal.active {
@@ -1006,10 +1007,10 @@ body {
     width: 100%;
     max-width: 600px;
     max-height: 90vh;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     animation: modalSlideIn 0.3s ease;
+    margin: auto;
 }
 
 @keyframes modalSlideIn {
@@ -1092,7 +1093,9 @@ body {
 
 .wizard-content {
     padding: 25px;
-    min-height: 300px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .wizard-panel {
@@ -1136,8 +1139,9 @@ body {
     justify-content: center;
     gap: 12px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     min-height: 140px;
+    height: auto;
 }
 
 .wizard-card:hover {
@@ -1226,7 +1230,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 10px;
-    max-height: 300px;
+    max-height: 40vh;
     overflow-y: auto;
 }
 
