@@ -4832,6 +4832,10 @@ function generateMTPackage() {
         if (eaState.mtPlatform === 'mt5') {
             const iniContent = generateIniFile(baseName + '.ex5');
             setTimeout(() => downloadFile(`03_AutoRun_${eaState.eaName}.ini`, iniContent), 600);
+            
+            const iniName = `03_AutoRun_${eaState.eaName}.ini`;
+            const batContent = `@echo off\nchcp 65001 >nul\necho =======================================================\necho EA Labo - MT5 バックテスト自動実行起動ツール\necho =======================================================\necho.\necho 【重要】\necho ダウンロードした全ての設定ファイル（.mq5, .set, .ini, .bat）を、必ず\necho お使いの「MQL5\\Experts」フォルダの中に移動させてから\necho このファイルをダブルクリックして実行してください。\necho.\necho （※ダウンロードフォルダ等で実行してもMT5はファイルを認識できず何も起きません！）\necho.\npause\necho.\necho MT5を起動して自動的にテストを開始します...\n"C:\\Program Files\\MetaTrader 5\\terminal64.exe" /config:"%~dp0${iniName}"\npause`;
+            setTimeout(() => downloadFile(`04_Start_Test_${eaState.eaName}.bat`, batContent), 900);
         }
 
         const folder = (eaState.mtPlatform === 'mt4' ? 'MQL4' : 'MQL5') + '\\Experts';

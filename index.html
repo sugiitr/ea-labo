@@ -1248,11 +1248,11 @@
                             </div>
                         </div>
                         
-                        <div class="mt-actions mt-4">
-                            <button id="generate-mt-package" class="btn btn-primary">📦 パッケージ作成 (.mq4/5 + .set)</button>
-                            <button id="run-mt-test" class="btn btn-accent ml-2">🚀 テスト開始 (MT5のみ)</button>
+                        <div class="mt-actions mt-4 text-center">
+                            <p class="form-hint mb-3" style="font-size: 0.9em;">※ブラウザの仕組み上、専用フォルダへの自動保存はできません。</p>
+                            <button id="generate-mt-package" class="btn btn-primary btn-lg" style="width:100%; font-size: 1.1em; padding: 15px;">📦 テスト用パッケージ一式を一括ダウンロード</button>
                         </div>
-                        <div id="mt-config-status" class="mt-2"></div>
+                        <div id="mt-config-status" class="mt-2 text-center" style="font-weight: bold;"></div>
                     </div>
 
                     <!-- 使い方ガイド -->
@@ -1277,20 +1277,25 @@
                     </div>
 
                     <div id="mt-guide-mt5" class="mt-guide-section mt-4">
-                        <div class="guide-card">
-                            <h4>📖 MT5 高速検証手順</h4>
-                            <div class="guide-steps">
+                        <div class="guide-card" style="border: 2px solid var(--accent-primary); background: rgba(108, 92, 231, 0.05);">
+                            <h4 style="color: var(--accent-primary);">⚠️ ダウンロード後の必須作業 (全自動テストの準備)</h4>
+                            <div class="guide-steps" style="margin-top: 15px;">
                                 <div class="guide-step">
-                                    <span class="step-num">1</span>
-                                    <p><strong>.mq5</strong> を <code>MQL5/Experts</code> に保存し、コンパイルします。</p>
+                                    <span class="step-num" style="background: var(--accent-primary);">1</span>
+                                    <p>ダウンロードされた4つのファイル（<strong>01～04で始まるファイル</strong>）をすべて選択します。</p>
                                 </div>
                                 <div class="guide-step">
-                                    <span class="step-num">2</span>
-                                    <p>「テスト開始」で保存される <strong>run_backtest.bat</strong> を実行すると、MT5 が自動起動してテストを開始します。</p>
+                                    <span class="step-num" style="background: var(--accent-primary);">2</span>
+                                    <p><strong>ご自身のPCのMT5を開き、左上のメニューから「ファイル」＞「データフォルダを開く」をクリックします。</strong><br>
+                                    <span style="font-size: 0.85em; color: var(--text-muted);">開いたフォルダの中から <code>MQL5</code> → <code>Experts</code> フォルダへ進みます。</span></p>
                                 </div>
                                 <div class="guide-step">
-                                    <span class="step-num">3</span>
-                                    <p>最適化結果はターミナルの「最適化結果」タブにリアルタイムで表示されます。</p>
+                                    <span class="step-num" style="background: var(--accent-primary);">3</span>
+                                    <p><strong>開いた「Experts」フォルダの中に、先ほどの4つのファイルをドラッグ＆ドロップして移動（コピー）します。</strong></p>
+                                </div>
+                                <div class="guide-step">
+                                    <span class="step-num" style="background: var(--accent-success); color: white;">4</span>
+                                    <p>最後に、<strong>移動先（Expertsフォルダ内）にある <code>04_Start_Test_...bat</code> ファイルをダブルクリック</strong>してください。<br>自動でテストが開始されます！🚀</p>
                                 </div>
                             </div>
                         </div>
