@@ -4817,25 +4817,26 @@ function generateMTPackage() {
 
     try {
         const ext = eaState.mtPlatform === 'mt4' ? 'mq4' : 'mq5';
-        const filename = eaState.eaName + '.' + ext;
+        const baseName = `01_Source_${eaState.eaName}`;
+        const sourceFile = baseName + '.' + ext;
         const mqCode = EAGenerator.generate(eaState);
         
         // Download source
-        downloadFile(filename, mqCode);
+        downloadFile(sourceFile, mqCode);
 
         // Download .set file
         const setContent = generateSetFile();
-        downloadFile(eaState.eaName + '.set', setContent);
+        setTimeout(() => downloadFile(`02_Params_${eaState.eaName}.set`, setContent), 300);
 
         // MT5 Configuration
         if (eaState.mtPlatform === 'mt5') {
-            const iniContent = generateIniFile(filename);
-            downloadFile(eaState.eaName + '.ini', iniContent);
+            const iniContent = generateIniFile(baseName + '.ex5');
+            setTimeout(() => downloadFile(`03_AutoRun_${eaState.eaName}.ini`, iniContent), 600);
         }
 
-        const folder = (eaState.mtPlatform === 'mt4' ? 'MQL4' : 'MQL5') + '/Experts';
+        const folder = (eaState.mtPlatform === 'mt4' ? 'MQL4' : 'MQL5') + '\\Experts';
         if (statusEl) {
-            statusEl.innerHTML = '✅ Package generated successfully.<br>Please save folders into MetaTrader \'' + folder + '\' folder.';
+            statusEl.innerHTML = `✅ ダウンロードが開始されました。<br>ダウンロード済みのファイルをすべて、MT4/MT5の「${folder}」フォルダ内へ移動させてください。`;
             statusEl.className = 'form-success mt-2';
         }
     } catch (err) {
@@ -4872,7 +4873,7 @@ function generateSetFile() {
 function generateIniFile(expertName) {
     const config = [
         '[Tester]',
-        'Expert=' + expertName,
+        'Expert=' + expertName.replace('.ex5', ''),
         'Symbol=' + eaState.mtSymbol,
         'Period=' + (eaState.mtPeriod),
         'Model=' + eaState.mtModel,
@@ -4894,8 +4895,8 @@ function runMTTest() {
         alert('Auto launch test is only supported for MT5. For MT4, please load the .set file manually.');
         return;
     }
-    const iniName = eaState.eaName + '.ini';
-    const batContent = `@echo off\necho EA Labo: Starting MT5 Backtest...\n"C:\\Program Files\\MetaTrader 5\\terminal64.exe" /config:%~dp0${iniName}\npause`;
-    downloadFile('run_backtest.bat', batContent);
+    const iniName = `03_AutoRun_${eaState.eaName}.ini`;
+    const batContent = `@echo off\nchcp 65001 >nul\necho =======================================================\necho EA Labo - MT5 バックテスト自動実行起動ツール\necho =======================================================\necho.\necho 【重要】\necho ダウンロードした全ての設定ファイル（.mq5, .set, .ini, .bat）を、必ず\necho お使いの「MQL5\\Experts」フォルダの中に移動させてから\necho このファイルをダブルクリックして実行してください。\necho.\necho （※ダウンロードフォルダ等で実行してもMT5はファイルを認識できず何も起きません！）\necho.\npause\necho.\necho MT5を起動して自動的にテストを開始します...\n"C:\\Program Files\\MetaTrader 5\\terminal64.exe" /config:"%~dp0${iniName}"\npause`;
+    downloadFile(`04_Start_Test_${eaState.eaName}.bat`, batContent);
 }
 
