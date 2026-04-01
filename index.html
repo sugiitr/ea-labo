@@ -1,4 +1,4 @@
-﻿<!-- ==================== H-001: DOCTYPE〜head ==================== -->
+<!-- ==================== H-001: DOCTYPE〜head ==================== -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -1149,12 +1149,15 @@
                 <h2 class="stage-title">Step 7: バックテスト・MT連携</h2>
                 
                 <div class="tabs-header mb-4">
-                    <button class="tab-btn active" data-tab="internal-backtest">📈 内蔵バックテスト</button>
-                    <button class="tab-btn" data-tab="mt-tab" id="mt-integration-tab-btn">🔄 MT4/MT5 連携</button>
+                    <button class="tab-btn active" data-tab="mt-tab" id="mt-integration-tab-btn">🔄 MT4/MT5 連携</button>
+                    <button class="tab-btn" data-tab="internal-backtest">📊 内蔵バックテスト (CSV)</button>
                 </div>
 
-                <!-- 内蔵バックテスト -->
-                <div id="internal-backtest" class="tab-content">
+                <!-- MT4/MT5 連携（メイン） -->
+                <!-- ※ mt-tab は下に定義、先にHTML上に登場するinternal-backtestをhiddenにする -->
+
+                <!-- 内蔵バックテスト（サブ） -->
+                <div id="internal-backtest" class="tab-content hidden">
                     <div class="history-section mb-4" id="backtest-history-area" style="display:none">
                         <h4>🕒 最近のバックテスト履歴 (直近5件)</h4>
                         <div id="backtest-history-list" class="history-list"></div>
@@ -1190,8 +1193,8 @@
                     </div>
                 </div>
 
-                <!-- MT4/MT5 連携 -->
-                <div id="mt-tab" class="tab-content hidden">
+                <!-- MT4/MT5 連携（メイン・デフォルト表示） -->
+                <div id="mt-tab" class="tab-content">
                     <div class="form-card">
                         <h3>⚙️ MetaTrader 連携設定</h3>
                         <div class="form-row">
@@ -1697,8 +1700,8 @@
     </div>
     <!-- //END H-110 -->
 
-    <script src="generator.js?v=202603301553"></script>
-    <script src="app.js?v=202603301553"></script>
+    <script src="generator.js?v=202604011500"></script>
+    <script src="app.js?v=202604011500"></script>
 </body>
 </html>
 

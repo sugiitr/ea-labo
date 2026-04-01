@@ -359,6 +359,7 @@ body {
     justify-content: space-between;
     margin-top: 30px;
     padding-top: 20px;
+    padding-right: 180px; /* Logic Map ボタン（固定右配置）と重ならないよう右余白 */
     border-top: 1px solid var(--border-color);
 }
 

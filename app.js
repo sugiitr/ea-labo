@@ -2,7 +2,6 @@
 // [A-001] eaState — グローバル状態オブジェクト（完成版）
 // [FIX] CACHE BUSTER v4.0.0
 // ============================================================
-window.alert('EA Labo 修正版(v4)が正常に読み込まれました！\nキャッシュは更新されました。これより全ての機能が正常に動作します。');
 console.log('EA Labo App.js v4.0.0 - SUCCESSFUL LOAD');
 const eaState = {
   // --- 基本設定 ---
@@ -174,6 +173,8 @@ const eaState = {
   // --- ナンピン追加設定 ---
   nanpinTargetProfit: 1000
 };
+
+const defaultEAStateJSON = JSON.stringify(eaState);
 
 // ============================================================
 // グローバル状態: wizardState
@@ -356,8 +357,8 @@ function getEATemplate(id) {
     // T-2: Bollinger Reversal
     if(id == 2) {
         base.eaName = 'BB-Reversal-EA';
-        base.buyConditions = [ { id: '2_1', category: 'indicator', indicator: 'bb', type: 'break_lower', params: { period: 20, deviation: 2.0 } } ];
-        base.sellConditions = [ { id: '2_2', category: 'indicator', indicator: 'bb', type: 'break_upper', params: { period: 20, deviation: 2.0 } } ];
+        base.buyConditions = [ { id: '2_1', category: 'indicator', indicator: 'bollinger', type: 'break_lower', params: { period: 20, deviation: 2.0 } } ];
+        base.sellConditions = [ { id: '2_2', category: 'indicator', indicator: 'bollinger', type: 'break_upper', params: { period: 20, deviation: 2.0 } } ];
         base.useNewsFilter = true;
         base.takeProfit = 20; base.stopLoss = 30;
     }
@@ -380,8 +381,9 @@ function getEATemplate(id) {
     }
     // T-5: News Scalp
     if(id == 5) {
-        base.buyConditions = [ { id: '5_1', category: 'momentum', indicator: 'momentum', detail: 'Momentum有力', type: 'mom_up', params: { period: 14 }, shift: 1 } ];
-        base.sellConditions = [ { id: '5_2', category: 'momentum', indicator: 'momentum', detail: 'Momentum有力', type: 'mom_down', params: { period: 14 }, shift: 1 } ];
+        base.eaName = 'News-Scalp-EA';
+        base.buyConditions = [ { id: '5_1', category: 'indicator', indicator: 'momentum', detail: 'Momentum有力', type: 'mom_up', params: { period: 14 }, shift: 1 } ];
+        base.sellConditions = [ { id: '5_2', category: 'indicator', indicator: 'momentum', detail: 'Momentum有力', type: 'mom_down', params: { period: 14 }, shift: 1 } ];
         base.useNewsFilter = false; 
         base.useAutoClose = true; base.autoCloseProfitPips = 5; base.autoCloseLossPips = 5;
     }
@@ -401,6 +403,7 @@ function getEATemplate(id) {
     }
     // T-7: MACD Zero Cross
     if(id == 7) {
+        base.eaName = 'MACD-Zero-Cross-EA';
         base.buyConditions = [ { id: '7_1', category: 'indicator', indicator: 'macd', detail: 'メイン線が0を抜けた', type: 'macd_cross_zero_up', params: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }, shift: 1 } ];
         base.sellConditions = [ { id: '7_2', category: 'indicator', indicator: 'macd', detail: 'メイン線が0を抜けた', type: 'macd_cross_zero_down', params: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }, shift: 1 } ];
         base.useDayFilter = true; base.dayFilterDays = [false, true, true, true, true, false, false];
@@ -418,6 +421,7 @@ function getEATemplate(id) {
     }
     // T-9: Deep Value
     if(id == 9) {
+        base.eaName = 'Deep-Value-EA';
         base.buyConditions = [ { id: '9_1', category: 'price', indicator: 'price', detail: '安値更新', type: 'price_below', params: { price: 130.00 }, shift: 1 } ];
         base.sellConditions = [ { id: '9_2', category: 'price', indicator: 'price', detail: '高値更新', type: 'price_above', params: { price: 160.00 }, shift: 1 } ];
         base.useSpreadFilter = true; base.maxSpread = 10;
@@ -425,6 +429,7 @@ function getEATemplate(id) {
     }
     // T-10: Parabolic SAR
     if(id == 10) {
+        base.eaName = 'Parabolic-SAR-EA';
         base.buyConditions = [ { id: '10_1', category: 'indicator', indicator: 'parabolic', detail: 'SAR上抜け', type: 'sar_cross_up', params: { step: 0.02, max: 0.2 }, shift: 1 } ];
         base.sellConditions = [ { id: '10_2', category: 'indicator', indicator: 'parabolic', detail: 'SAR下抜け', type: 'sar_cross_down', params: { step: 0.02, max: 0.2 }, shift: 1 } ];
         base.useNewsFilter = true;
@@ -437,18 +442,18 @@ function getEATemplate(id) {
 function applyTemplate(id) {
     const newState = getEATemplate(id);
     
-    // Clear current conditions
-    eaState.buyConditions = [];
-    eaState.sellConditions = [];
-    eaState.exitConditions = [];
-    eaState.strategies = [];
+    // Reset eaState completely to default values (deep clone to keep reference)
+    const df = JSON.parse(defaultEAStateJSON);
+    for (const key in eaState) delete eaState[key];
+    Object.assign(eaState, df);
     
-    // Copy new state
-    Object.assign(eaState, newState);
-    
-    // Special handling for positionParams
-    if (newState.positionParams) {
-        eaState.positionParams = { ...eaState.positionParams, ...newState.positionParams };
+    // Apply template overrides, with special handling for nested objects
+    for (const key in newState) {
+        if (key === 'positionParams') {
+            eaState.positionParams = { ...eaState.positionParams, ...newState.positionParams };
+        } else {
+            eaState[key] = newState[key];
+        }
     }
 
     // Refresh UI
@@ -4783,6 +4788,21 @@ function setupMTSettings() {
             });
         }
     });
+}
+
+/**
+ * ファイルダウンロードユーティリティ関数
+ */
+function downloadFile(filename, content) {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 /**

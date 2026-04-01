@@ -983,10 +983,13 @@ CTrade trade;
 
       case 'rsi': {
         const period = detail.period || 14;
-        const overbought = detail.overbought || 70;
-        const oversold = detail.oversold || 30;
+        const overbought = detail.overbought || detail.level || 70;
+        const oversold = detail.oversold || detail.level || 30;
         if (platform === 'mt4') {
           const rsi = `iRSI(Symbol(),Period(),${period},PRICE_CLOSE,${shift})`;
+          const type = detail.type || detail.conditionType || '';
+          if (type === 'oversold' || type === 'below_level') return `(${rsi} < ${oversold})`;
+          if (type === 'overbought' || type === 'above_level') return `(${rsi} > ${overbought})`;
           if (isBuy) return `(${rsi} < ${oversold})`;
           else       return `(${rsi} > ${overbought})`;
         } else {
@@ -1053,10 +1056,13 @@ CTrade trade;
 
       case 'cci': {
         const period = detail.period || 14;
-        const ob = detail.overbought || 100;
-        const os = detail.oversold || -100;
+        const ob = detail.overbought || detail.level || 100;
+        const os = detail.oversold || (detail.level ? -detail.level : -100);
         if (platform === 'mt4') {
           const cci = `iCCI(Symbol(),Period(),${period},PRICE_TYPICAL,${shift})`;
+          const type = detail.type || detail.conditionType || '';
+          if (type === 'oversold' || type === 'below_level') return `(${cci} < ${os})`;
+          if (type === 'overbought' || type === 'above_level') return `(${cci} > ${ob})`;
           if (isBuy) return `(${cci} < ${os})`;
           else       return `(${cci} > ${ob})`;
         } else {
@@ -1765,17 +1771,29 @@ CTrade trade;
       code += '}\n\n';
     }
 
-    code += '   if(state.useAlertEmail) {\n';
-    code += '      code += \'   SendMail("EA Alert", message);\\n\';\n';
-    code += '   }\n';
-    code += '   if(state.useAlertPush) {\n';
-    code += '      code += \'   SendNotification(message);\\n\';\n';
-    code += '   }\n';
-    code += '   if(state.useDiscordWebhook) {\n';
-    code += '      code += \'   SendDiscord(message);\\n\';\n';
-    code += '   }\n';
-    code += '   code += \'}\\n\\n\';\n';
-    code += '}\n\n';
+    // Alert function MT4
+    if (state.discordNotifyEntry || state.discordNotifyClose) {
+      code += '//+------------------------------------------------------------------+\n';
+      code += '//| Send Alert MT4                                                    |\n';
+      code += '//+------------------------------------------------------------------+\n';
+      code += 'void SendAlert(string message)\n{\n';
+      if (state.useAlertPopup) {
+        code += '   Alert(message);\n';
+      }
+      if (state.useAlertSound) {
+        code += '   PlaySound("' + (state.alertSoundFile || 'alert.wav') + '");\n';
+      }
+      if (state.useAlertEmail) {
+        code += '   SendMail("EA Alert", message);\n';
+      }
+      if (state.useAlertPush) {
+        code += '   SendNotification(message);\n';
+      }
+      if (state.useDiscordWebhook) {
+        code += '   SendDiscord(message);\n';
+      }
+      code += '}\n\n';
+    }
 
     return code;
   },
