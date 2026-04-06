@@ -347,8 +347,23 @@ CTrade trade;
         case 'cci':
           initCode += `   ${handleName} = iCCI(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.period || 14}, PRICE_TYPICAL);\n`;
           break;
+        case 'ma_cross':
+          initCode += `   ${handleName} = iMA(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.slowPeriod || 25}, 0, (ENUM_MA_METHOD)(${params.method || 0}), PRICE_CLOSE);\n`;
+          break;
+        case 'ma_perfect':
+          initCode += `   ${handleName} = iMA(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.period4 || 100}, 0, (ENUM_MA_METHOD)(${params.method || 0}), PRICE_CLOSE);\n`;
+          break;
+        case 'ma_deviation':
+          initCode += `   ${handleName} = iMA(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.period || 20}, 0, (ENUM_MA_METHOD)(${params.method || 0}), PRICE_CLOSE);\n`;
+          break;
+        case 'heiken_ashi':
+          initCode += `   ${handleName} = iCustom(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, "Examples\\\\Heiken_Ashi");\n`;
+          break;
+        case 'round_numbers':
+          initCode += `   ${handleName} = INVALID_HANDLE; // Price based\n`;
+          break;
       }
-      initCode += `   if(${handleName} == INVALID_HANDLE) { Print("Failed to create handle for condition ${idx}"); return false; }\n`;
+      initCode += `   if(${handleName} == INVALID_HANDLE && "${ind}" != "round_numbers") { Print("Failed to create handle for condition ${idx}"); return false; }\n`;
     });
 
     initCode += '   return true;\n}\n\n';
@@ -370,10 +385,9 @@ CTrade trade;
         const isBuy = (direction === 'buy');
         const funcName = isBuy ? `Check${indAlias}_Buy_${idx}` : `Check${indAlias}_Sell_${idx}`;
         const handleName = `hInd_${idx}`;
-
         code += `bool ${funcName}()\n{\n`;
         code += `   double buffer0[], buffer1[];\n`;
-        
+
         switch(ind) {
           case 'ma':
             code += `   if(CopyBuffer(${handleName}, 0, ${shift}, 2, buffer0) < 2) return false;\n`;
@@ -399,6 +413,40 @@ CTrade trade;
               else            code += `   return (buffer0[0] > 80);\n`;
             }
             break;
+          case 'ma_cross':
+            code += `   if(CopyBuffer(${handleName}, 0, ${shift}, 2, buffer0) < 2) return false;\n`;
+            if (isBuy) code += `   return (iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift}) > buffer0[0] && iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift+1}) <= buffer0[1]);\n`;
+            else       code += `   return (iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift}) < buffer0[0] && iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift+1}) >= buffer0[1]);\n`;
+            break;
+          case 'ma_perfect':
+            code += `   double m1 = iMA(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.period1 || 10}, 0, MODE_SMA, PRICE_CLOSE, ${shift});\n`;
+            code += `   double m2 = iMA(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.period2 || 25}, 0, MODE_SMA, PRICE_CLOSE, ${shift});\n`;
+            code += `   double m3 = iMA(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${params.period3 || 50}, 0, MODE_SMA, PRICE_CLOSE, ${shift});\n`;
+            code += `   if(CopyBuffer(${handleName}, 0, ${shift}, 1, buffer0) < 1) return false;\n`;
+            if (isBuy) code += `   return (m1 > m2 && m2 > m3 && m3 > buffer0[0]);\n`;
+            else       code += `   return (m1 < m2 && m2 < m3 && m3 < buffer0[0]);\n`;
+            break;
+          case 'ma_deviation':
+            code += `   if(CopyBuffer(${handleName}, 0, ${shift}, 1, buffer0) < 1) return false;\n`;
+            code += `   double closeV = iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift});\n`;
+            if (isBuy) code += `   return ((closeV - buffer0[0]) / _Point >= ${params.limit || 10} * 10);\n`;
+            else       code += `   return ((buffer0[0] - closeV) / _Point >= ${params.limit || 10} * 10);\n`;
+            break;
+          case 'heiken_ashi':
+            code += `   if(CopyBuffer(${handleName}, 0, ${shift}, 2, buffer0) < 2) return false;\n`;
+            code += `   if(CopyBuffer(${handleName}, 3, ${shift}, 2, buffer1) < 2) return false;\n`;
+            if (type === 'turn_up') code += `   return (buffer1[0] > buffer0[0] && buffer1[1] <= buffer0[1]);\n`;
+            else if (type === 'turn_down') code += `   return (buffer1[0] < buffer0[0] && buffer1[1] >= buffer0[1]);\n`;
+            else if (isBuy) code += `   return (buffer1[0] > buffer0[0]);\n`;
+            else            code += `   return (buffer1[0] < buffer0[0]);\n`;
+            break;
+          case 'round_numbers':
+            code += `   double prc = iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift});\n`;
+            code += `   int stp = ${params.step || 100};\n`;
+            if (type === 'price_above') code += `   return (fmod(prc, stp * _Point * 10) < (stp * _Point * 10 / 2));\n`;
+            else if (type === 'price_below') code += `   return (fmod(prc, stp * _Point * 10) > (stp * _Point * 10 / 2));\n`;
+            else code += `   return true;\n`;
+            break;
           case 'ichimoku':
             code += `   if(CopyBuffer(${handleName}, 0, ${shift}, 1, buffer0) < 1) return false; // Tenkan\n`;
             code += `   if(CopyBuffer(${handleName}, 1, ${shift}, 1, buffer1) < 1) return false; // Kijun\n`;
@@ -410,18 +458,6 @@ CTrade trade;
               code += `   if(CopyBuffer(${handleName}, 3, ${shift}, 1, buffer1) < 1) return false; // SpanB\n`;
               if (isBuy) code += `   return (iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift}) < MathMin(buffer0[0], buffer1[0]));\n`;
               else       code += `   return (iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift}) > MathMax(buffer0[0], buffer1[0]));\n`;
-            } else if (type === 'kumo_break') {
-              code += `   if(CopyBuffer(${handleName}, 2, ${shift}, 2, buffer0) < 2) return false; // SpanA(0,1)\n`;
-              code += `   if(CopyBuffer(${handleName}, 3, ${shift}, 2, buffer1) < 2) return false; // SpanB(0,1)\n`;
-              code += `   double close0 = iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift});\n`;
-              code += `   double close1 = iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift+1});\n`;
-              if (isBuy) code += `   return (close0 > MathMax(buffer0[0],buffer1[0]) && close1 <= MathMax(buffer0[1],buffer1[1]));\n`;
-              else       code += `   return (close0 < MathMin(buffer0[0],buffer1[0]) && close1 >= MathMin(buffer0[1],buffer1[1]));\n`;
-            } else if (type === 'in_kumo') {
-              code += `   if(CopyBuffer(${handleName}, 2, ${shift}, 1, buffer0) < 1) return false; // SpanA\n`;
-              code += `   if(CopyBuffer(${handleName}, 3, ${shift}, 1, buffer1) < 1) return false; // SpanB\n`;
-              code += `   double close0 = iClose(Symbol(), (ENUM_TIMEFRAMES)${c.condTimeframe || 0}, ${shift});\n`;
-              code += `   return (close0 < MathMax(buffer0[0],buffer1[0]) && close0 > MathMin(buffer0[0],buffer1[0]));\n`;
             } else {
               code += `   return true;\n`;
             }
@@ -1098,6 +1134,84 @@ CTrade trade;
           return `(${atr} > ${level} * Point)`;
         } else {
           return isBuy ? `CheckATR_Buy_${idx}()` : `CheckATR_Sell_${idx}()`;
+        }
+      }
+
+      case 'ma_cross': {
+        const fast = detail.fastPeriod || 10;
+        const slow = detail.slowPeriod || 25;
+        const method = detail.method || 'MODE_SMA';
+        if (platform === 'mt4') {
+          const fma0 = `iMA(Symbol(),Period(),${fast},0,${method},PRICE_CLOSE,${shift})`;
+          const sma0 = `iMA(Symbol(),Period(),${slow},0,${method},PRICE_CLOSE,${shift})`;
+          const fma1 = `iMA(Symbol(),Period(),${fast},0,${method},PRICE_CLOSE,${shift + 1})`;
+          const sma1 = `iMA(Symbol(),Period(),${slow},0,${method},PRICE_CLOSE,${shift + 1})`;
+          if (isBuy) return `(${fma0} > ${sma0} && ${fma1} <= ${sma1})`;
+          else       return `(${fma0} < ${sma0} && ${fma1} >= ${sma1})`;
+        } else {
+          return isBuy ? `CheckMACross_Buy_${idx}()` : `CheckMACross_Sell_${idx}()`;
+        }
+      }
+
+      case 'ma_perfect': {
+        const p1 = detail.period1 || 10;
+        const p2 = detail.period2 || 25;
+        const p3 = detail.period3 || 50;
+        const p4 = detail.period4 || 100;
+        const method = detail.method || 'MODE_SMA';
+        if (platform === 'mt4') {
+          const m1 = `iMA(Symbol(),Period(),${p1},0,${method},PRICE_CLOSE,${shift})`;
+          const m2 = `iMA(Symbol(),Period(),${p2},0,${method},PRICE_CLOSE,${shift})`;
+          const m3 = `iMA(Symbol(),Period(),${p3},0,${method},PRICE_CLOSE,${shift})`;
+          const m4 = `iMA(Symbol(),Period(),${p4},0,${method},PRICE_CLOSE,${shift})`;
+          if (isBuy) return `(${m1} > ${m2} && ${m2} > ${m3} && ${m3} > ${m4})`;
+          else       return `(${m1} < ${m2} && ${m2} < ${m3} && ${m3} < ${m4})`;
+        } else {
+          return isBuy ? `CheckMAPerfect_Buy_${idx}()` : `CheckMAPerfect_Sell_${idx}()`;
+        }
+      }
+
+      case 'ma_deviation': {
+        const period = detail.period || 20;
+        const limit = detail.limitPips || 10;
+        const method = detail.method || 'MODE_SMA';
+        if (platform === 'mt4') {
+          const ma = `iMA(Symbol(),Period(),${period},0,${method},PRICE_CLOSE,${shift})`;
+          const close = this._close(shift);
+          if (detail.conditionType === 'above_limit' || isBuy) return `((${close} - ${ma}) / Point >= ${limit})`;
+          else return `((${ma} - ${close}) / Point >= ${limit})`;
+        } else {
+          return isBuy ? `CheckMADeviation_Buy_${idx}()` : `CheckMADeviation_Sell_${idx}()`;
+        }
+      }
+
+      case 'heiken_ashi': {
+        const type = detail.conditionType || 'is_bullish';
+        if (platform === 'mt4') {
+          const haOpen = `iCustom(Symbol(),Period(),"Heiken Ashi",0,${shift})`;
+          const haClose = `iCustom(Symbol(),Period(),"Heiken Ashi",3,${shift})`;
+          const haOpen1 = `iCustom(Symbol(),Period(),"Heiken Ashi",0,${shift+1})`;
+          const haClose1 = `iCustom(Symbol(),Period(),"Heiken Ashi",3,${shift+1})`;
+          if (type === 'is_bullish' || (isBuy && type === 'is_bullish')) return `(${haClose} > ${haOpen})`;
+          if (type === 'is_bearish') return `(${haClose} < ${haOpen})`;
+          if (type === 'turn_up') return `(${haClose} > ${haOpen} && ${haClose1} <= ${haOpen1})`;
+          if (type === 'turn_down') return `(${haClose} < ${haOpen} && ${haClose1} >= ${haOpen1})`;
+          return isBuy ? `(${haClose} > ${haOpen})` : `(${haClose} < ${haOpen})`;
+        } else {
+          return isBuy ? `CheckHeikenAshi_Buy_${idx}()` : `CheckHeikenAshi_Sell_${idx}()`;
+        }
+      }
+
+      case 'round_numbers': {
+        const step = detail.step || 100; // e.g. 100 pips
+        if (platform === 'mt4') {
+          const close = this._close(shift);
+          const type = detail.conditionType || 'price_above';
+          if (type === 'price_above') return `(MathMod(${close}, ${step} * Point) < (${step} * Point / 2))`;
+          if (type === 'price_below') return `(MathMod(${close}, ${step} * Point) > (${step} * Point / 2))`;
+          return `true`;
+        } else {
+          return isBuy ? `CheckRoundNumbers_Buy_${idx}()` : `CheckRoundNumbers_Sell_${idx}()`;
         }
       }
 

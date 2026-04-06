@@ -1910,8 +1910,7 @@ function renderWizardStep2() {
       { id: 'adx',            label: 'ADX', desc: 'トレンドの強さを測定' },
       { id: 'ichimoku',       label: '一目均衡表', desc: '複合的な相場環境を分析' },
       { id: 'atr',            label: 'ATR', desc: 'ボラティリティの変動を測定' },
-      { id: 'round_numbers',  label: 'キリバン取得', desc: '100pips等の節目を判定' },
-      { id: 'holiday_filter', label: '祝日制御', desc: '主要国の祝日にトレード停止' }
+      { id: 'round_numbers',  label: 'キリバン取得', desc: '100pips等の節目を判定' }
     ];
   } else if (wizardState.category === 'candle') {
     items = [
@@ -2200,6 +2199,35 @@ function getIndicatorConditions(indicator) {
         { id: 'cross_up_618',    label: '価格が61.8%を上抜け' },
         { id: 'cross_down_618',  label: '価格が61.8%を下抜け' }
       ];
+    case 'ma_cross':
+      return [
+        { id: 'golden_cross', label: 'ゴールデンクロス(短期が長期を上抜け)' },
+        { id: 'dead_cross',   label: 'デッドクロス(短期が長期を下抜け)' }
+      ];
+    case 'ma_perfect':
+      return [
+        { id: 'bullish_order', label: '強気のパーフェクトオーダー(短期>中期>長期)' },
+        { id: 'bearish_order', label: '弱気のパーフェクトオーダー(短期<中期<長期)' }
+      ];
+    case 'ma_deviation':
+      return [
+        { id: 'above_limit', label: '指定pips以上の上方乖離' },
+        { id: 'below_limit', label: '指定pips以上の下方乖離' }
+      ];
+    case 'heiken_ashi':
+      return [
+        { id: 'is_bullish',  label: '平均足が陽線' },
+        { id: 'is_bearish',  label: '平均足が陰線' },
+        { id: 'turn_up',     label: '陰線から陽線に転換' },
+        { id: 'turn_down',   label: '陽線から陰線に転換' }
+      ];
+    case 'round_numbers':
+      return [
+        { id: 'price_above',  label: '価格がキリバンより上' },
+        { id: 'price_below',  label: '価格がキリバンより下' },
+        { id: 'cross_up',     label: '価格がキリバンを上抜け' },
+        { id: 'cross_down',   label: '価格がキリバンを下抜け' }
+      ];
     default:
       return [];
   }
@@ -2459,16 +2487,6 @@ function getRequiredParams(category, indicator, conditionType) {
           ]
         });
         break;
-      case 'holiday_filter':
-        params.push({
-          id: 'holiday_country', label: '対象国', type: 'select', default: 'JP,US',
-          options: [
-            { value: 'JP,US', label: '日本・米国' },
-            { value: 'JP',    label: '日本のみ' },
-            { value: 'US',    label: '米国のみ' },
-            { value: 'ALL',   label: '主要全ヶ国' }
-          ]
-        });
         break;
       case 'envelope':
         params.push({ id: 'env_period', label: '期間', type: 'number', default: 20, min: 1 });
@@ -4761,8 +4779,8 @@ function setupMTSettings() {
     const genBtn = document.getElementById('generate-mt-package');
     if (genBtn) genBtn.onclick = () => generateMTPackage();
 
-    const runBtn = document.getElementById('run-mt-test');
-    if (runBtn) runBtn.onclick = () => runMTTest();
+    const runBtn = document.getElementById('run-one-click-mt5');
+    if (runBtn) runBtn.onclick = () => runOneClickMT5();
 
     // Optimization Parameter Toggles
     document.querySelectorAll('.opt-toggle input').forEach(toggle => {
@@ -4892,15 +4910,85 @@ function generateIniFile(expertName) {
 }
 
 /**
- * Batch script to launch MT5 backtest
+ * One-Click Runner: Bundles files into a single PowerShell script
  */
-function runMTTest() {
+function runOneClickMT5() {
     if (eaState.mtPlatform !== 'mt5') {
-        alert('Auto launch test is only supported for MT5. For MT4, please load the .set file manually.');
+        alert('この全自動ワンクリック機能は MT5 専用です。MT4 の場合は「一括ダウンロード」から手動で配置してください。');
         return;
     }
-    const iniName = `03_AutoRun_${eaState.eaName}.ini`;
-    const batContent = `@echo off\nchcp 65001 >nul\necho =======================================================\necho EA Labo - MT5 バックテスト自動実行起動ツール\necho =======================================================\necho.\necho 【重要】\necho ダウンロードした全ての設定ファイル（.mq5, .set, .ini, .bat）を、必ず\necho お使いの「MQL5\\Experts」フォルダの中に移動させてから\necho このファイルをダブルクリックして実行してください。\necho.\necho （※ダウンロードフォルダ等で実行してもMT5はファイルを認識できず何も起きません！）\necho.\npause\necho.\necho MT5を起動して自動的にテストを開始します...\n"C:\\Program Files\\MetaTrader 5\\terminal64.exe" /config:"%~dp0${iniName}"\npause`;
-    downloadFile(`04_Start_Test_${eaState.eaName}.bat`, batContent);
+
+    const baseName = `01_Source_${eaState.eaName}`;
+    const mqCode = EAGenerator.generate(eaState);
+    const setContent = generateSetFile();
+    const iniContent = generateIniFile(baseName + '.ex5');
+    const iniName = `AutoRun_${eaState.eaName}.ini`;
+
+    // Helper: Escape backslashes and quotes for PS
+    const escapePS = (str) => str.replace(/`/g, '``').replace(/\$/g, '`$').replace(/"/g, '`"');
+
+    const psScript = `
+# EA Labo - MT5 One-Click Auto Runner
+$ErrorActionPreference = "Stop"
+
+$eaName = "${eaState.eaName}"
+$mqlCode = @"
+${mqCode}
+"@
+
+$setContent = @"
+${setContent}
+"@
+
+$iniContent = @"
+${iniContent}
+"@
+
+# 1. MT5 Path Detection
+$mt5Path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+if (-not (Test-Path $mt5Path)) {
+    Write-Host "MT5 terminal not found at $mt5Path. Searching..." -ForegroundColor Yellow
+    $search = Get-Process "terminal64" -ErrorAction SilentlyContinue
+    if ($search) { $mt5Path = $search.MainModule.FileName }
+    else {
+        $mt5Path = Read-Host "MT5 (terminal64.exe) のパスが見つかりません。パスを入力してください"
+    }
+}
+
+# 2. Get Data Folder
+# Usually we ask the user to run this in their Experts folder, but let's try to find it.
+# If not found, we'll create the files in the current directory and ask them to move once.
+Write-Host "--- EA Labo Auto Setup ---" -ForegroundColor Cyan
+
+$dataDir = "$env:APPDATA\\MetaQuotes\\Terminal"
+if (Test-Path $dataDir) {
+    # Find the most recently modified subfolder (the instance)
+    $instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($instance) {
+        $expertDir = Join-Path $instance.FullName "MQL5\\Experts"
+        if (Test-Path $expertDir) {
+            Write-Host "Setting up in: $expertDir" -ForegroundColor Green
+            
+            # Write Files
+            Set-Content -Path (Join-Path $expertDir "${baseName}.mq5") -Value $mqlCode -Encoding UTF8
+            Set-Content -Path (Join-Path $expertDir "Params_${eaState.eaName}.set") -Value $setContent -Encoding UTF8
+            Set-Content -Path (Join-Path $expertDir "${iniName}") -Value $iniContent -Encoding UTF8
+            
+            # Start MT5
+            Write-Host "Starting MT5 Backtest..." -ForegroundColor Green
+            Start-Process $mt5Path -ArgumentList "/config:``"$expertDir\\${iniName}``""
+            Exit
+        }
+    }
+}
+
+Write-Host "⚠️ 自動検出に失敗しました。このスクリプトを MQL5\\Experts フォルダに移動して実行してください。" -ForegroundColor Red
+Set-Content -Path "${baseName}.mq5" -Value $mqlCode -Encoding UTF8
+Set-Content -Path "Params_${eaState.eaName}.set" -Value $setContent -Encoding UTF8
+Set-Content -Path "${iniName}" -Value $iniContent -Encoding UTF8
+Pause
+`;
+
+    downloadFile(`🚀Run_MT5_Test_${eaState.eaName}.ps1`, psScript);
 }
 
