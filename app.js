@@ -1,9 +1,8 @@
 ﻿// ============================================================
-// [A-001] eaState 窶・繧ｰ繝ｭ繝ｼ繝舌Ν迥ｶ諷九が繝悶ず繧ｧ繧ｯ繝・// [FIX] REBUILT v4.2.0
+// [A-001] eaState 窶・繧ｰ繝ｭ繝ｼ繝舌Ν迥ｶ諷九が繝悶ず繧ｧ繧ｯ繝・// [FIX] REBUILT v4.2.0 - EMERGENCY RECOVERY
 // ============================================================
-console.log('EA Labo App.js v4.2.0 - SUCCESSFUL REBUILD');
+console.log('EA Labo App.js v4.2.0 - RECOVERY SUCCESS');
 
-// ==================== [A-110] 繝代せ繝ｯ繝ｼ繝芽ｪ崎ｨｼ讖溯・ ====================
 /**
  * 繝代せ繝ｯ繝ｼ繝芽ｪ崎ｨｼ縺ｮ蛻晄悄蛹・ */
 function initAuth() {
@@ -12,10 +11,14 @@ function initAuth() {
     const submitBtn = document.getElementById('auth-submit');
     const errorMsg = document.getElementById('auth-error');
 
-    if (!authOverlay || !passwordInput || !submitBtn) return;
+    if (!authOverlay || !passwordInput || !submitBtn) {
+        console.warn('Auth elements not found');
+        return;
+    }
 
     if (sessionStorage.getItem('jim_ea_labo_auth') === 'true') {
         authOverlay.classList.add('hidden');
+        authOverlay.style.display = 'none';
         return;
     }
 
@@ -24,14 +27,20 @@ function initAuth() {
         if (input === 'JIM2026') {
             sessionStorage.setItem('jim_ea_labo_auth', 'true');
             authOverlay.classList.add('hidden');
-            showToast('隱崎ｨｼ縺ｫ謌仙粥縺励∪縺励◆', 'success');
+            setTimeout(() => authOverlay.style.display = 'none', 500);
+            if (typeof showToast === 'function') {
+                showToast('隱崎ｨｼ縺ｫ謌仙粥縺励∪縺励◆', 'success');
+            }
         } else {
             if (errorMsg) {
                 errorMsg.classList.remove('hidden');
                 setTimeout(() => errorMsg.classList.add('hidden'), 3000);
             }
             passwordInput.value = '';
-            showToast('繝代せ繝ｯ繝ｼ繝峨′豁｣縺励￥縺ゅｊ縺ｾ縺帙ｓ', 'error');
+            passwordInput.focus();
+            if (typeof showToast === 'function') {
+                showToast('繝代せ繝ｯ繝ｼ繝峨′豁｣縺励￥縺ゅｊ縺ｾ縺帙ｓ', 'error');
+            }
         }
     };
 
@@ -40,51 +49,7 @@ function initAuth() {
         if (e.key === 'Enter') checkPassword();
     });
 }
-// ============================================================
 
-// ==================== [A-110] パスワード認証機能 ====================
-/**
- * パスワード認証の初期化
- */
-function initAuth() {
-    const authOverlay = document.getElementById('auth-overlay');
-    const passwordInput = document.getElementById('auth-password');
-    const submitBtn = document.getElementById('auth-submit');
-    const errorMsg = document.getElementById('auth-error');
-
-    if (!authOverlay || !passwordInput || !submitBtn) return;
-
-    // セッションに認証済みフラグがあるか確認
-    if (sessionStorage.getItem('jim_ea_labo_auth') === 'true') {
-        authOverlay.classList.add('hidden');
-        return;
-    }
-
-    const checkPassword = () => {
-        const input = passwordInput.value;
-        // 暫定パスワード: JIM2026
-        if (input === 'JIM2026') {
-            sessionStorage.setItem('jim_ea_labo_auth', 'true');
-            authOverlay.classList.add('hidden');
-            showToast('認証に成功しました', 'success');
-        } else {
-            if (errorMsg) {
-                errorMsg.classList.remove('hidden');
-                setTimeout(() => errorMsg.classList.add('hidden'), 3000);
-            }
-            passwordInput.value = '';
-            showToast('パスワードが正しくありません', 'error');
-        }
-    };
-
-    submitBtn.addEventListener('click', checkPassword);
-    passwordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkPassword();
-    });
-}
-// ============================================================
-
-const eaState = {
   // --- 基本設定 ---
   eaName: 'MyEA',
   platform: 'mt4',
@@ -96,24 +61,188 @@ const eaState = {
   maxPositions: 1,
   entryCooldown: 0,
   timeframe: 'PERIOD_H1',
+
+  // --- MT4/MT5 Integration ---
   mtPlatform: 'mt5',
-  mtSymbol: 'XAUUSD',
-  mtPeriod: 'PERIOD_M5',
-  mtModel: '1',
-  mtFromDate: '2024.01.01',
-  mtToDate: '2024.12.31',
+  mtSymbol: 'USDJPY',
+  mtPeriod: 'H1',
+  mtModel: '0',
+  mtFromDate: '2024-01-01',
+  mtToDate: '2024-12-31',
   mtOptimization: false,
-  optParams: {},
-  conditions: [],
-  filters: [],
-  globalFilters: {
-    spread: { enabled: false, max: 20 },
-    stopLoss: { enabled: false, pips: 30 },
-    takeProfit: { enabled: false, pips: 50 },
-    trailingStop: { enabled: false, start: 20, step: 5 }
-  }
+  optParams: {}, 
+
+  // --- strategies array + positionParams ---
+  strategies: [],
+  positionParams: {
+    nanpinInterval: 20,
+    nanpinMax: 5,
+    nanpinTimeInterval: 0,
+    nanpinSkipCount: 0,
+    nanpinSkipType: 'none',
+    nanpinSkipATRMultiplier: 1.5,
+    nanpinSkipATRPeriod: 14,
+    martingaleMultiplier: 2.0,
+    martingaleMax: 5,
+    pyramidInterval: 30,
+    pyramidMax: 3,
+    pyramidUseEntryCondition: false,
+    gridInterval: 20,
+    gridCount: 5,
+    gridTriggerType: 'entry',
+    gridTriggerPrice: 0,
+    gridTriggerCondition: 'above',
+    gridDirection: 'both',
+    gridResetPips: 100,
+    gridResetATRMultiplier: 3.0,
+    gridResetATRPeriod: 14,
+    gridResetOnOneSideComplete: false,
+    reverseGridInterval: 20,
+    reverseGridCount: 5,
+    reverseGridTriggerType: 'entry',
+    reverseGridTriggerPrice: 0,
+    reverseGridTriggerCondition: 'above',
+    reverseGridDirection: 'both',
+    reverseGridResetPips: 100,
+    reverseGridResetATRMultiplier: 3.0,
+    reverseGridResetATRPeriod: 14,
+    reverseGridResetOnOneSideComplete: false
+  },
+
+  // --- エントリー条件 ---
+  buyConditions: [],
+  sellConditions: [],
+  buyCombine: 'AND',
+  sellCombine: 'AND',
+
+  // --- 決済基本 ---
+  takeProfit: 0,
+  stopLoss: 0,
+  useTrailing: false,
+  trailingStart: 20,
+  trailingWidth: 15,
+  trailingStep: 10,
+  useAutoClose: false,
+  autoCloseProfitPips: 0,
+  autoCloseLossPips: 0,
+  autoCloseProfitYen: 0,
+  autoCloseLossYen: 0,
+  useManualCloseButton: false,
+  useMagicStopOrder: false,
+  magicStopAmount: 10000,
+  magicStopType: 'both',
+
+  // --- エグジット条件 (P2-C) ---
+  exitConditions: [],
+  exitCombine: 'AND',
+
+  // --- 決済優先度 (P2-D) ---
+  exitPriority: ['stoploss', 'takeprofit', 'trailing', 'autoclose', 'indicator_exit', 'manual_close'],
+
+  // --- スプレッドフィルター ---
+  useSpreadFilter: false,
+  maxSpread: 3.0,
+
+  // --- 時間フィルター ---
+  useTimeFilter: false,
+  timeStartHour: 0,
+  timeStartMin: 0,
+  timeEndHour: 23,
+  timeEndMin: 59,
+
+  // --- パーフェクトオーダー ---
+  usePerfectOrder: false,
+  poShortPeriod: 20,
+  poMidPeriod: 50,
+  poLongPeriod: 100,
+
+  // --- ADXフィルター ---
+  useAdxFilter: false,
+  adxFilterPeriod: 14,
+  adxFilterLevel: 25,
+
+  // --- ゴト日フィルター (P2-B) ---
+  useGotoFilter: false,
+  gotoStopStartHour: 0,
+  gotoStopStartMin: 0,
+  gotoStopEndHour: 23,
+  gotoStopEndMin: 59,
+  gotoIncludeMonthEnd: true,
+
+  // --- 経済指標フィルター (P2-B) ---
+  useNewsFilter: false,
+  newsStopMinutesBefore: 30,
+  newsStopMinutesAfter: 30,
+  newsEvents: [],
+
+  // --- 曜日フィルター (P2-7) ---
+  useDayFilter: false,
+  dayFilterMode: 'allow',
+  dayFilterDays: [false, true, true, true, true, true, false],
+
+  // --- ストラテジー ---
+  useNanpin: false,
+  useMartingale: false,
+  usePyramid: false,
+  useGrid: false,
+  useReverseGrid: false,
+  
+  // --- 月末月初フィルター ---
+  useMonthFilter: false,
+  monthStartDays: 0,
+  monthEndDays: 0,
+
+  // --- アラート ---
+  useAlertPopup: false,
+  useAlertSound: false,
+  alertSoundFile: 'alert.wav',
+  useAlertEmail: false,
+  useAlertPush: false,
+
+  // --- Discord Webhook ---
+  useDiscordWebhook: false,
+  discordWebhookURL: '',
+  discordNotifyEntry: true,
+  discordNotifyClose: true,
+  discordNotifyError: false,
+  discordNotifyDaily: false,
+
+  // --- 認証・セキュリティ設定 (P4-D) ---
+  useAccountLock: false,
+  lockAccountId: '',
+  useExpiryLock: false,
+  lockExpiryDate: '',
+  
+  // --- ダウンロード設定 ---
+  downloadFormat: 'mq4',
+
+  // --- ナンピン追加設定 ---
+  nanpinTargetProfit: 1000
 };
 
+const defaultEAStateJSON = JSON.stringify(eaState);
+
+// ============================================================
+// グローバル状態: wizardState
+// ============================================================
+const wizardState = {
+  targetType: '',
+  step: 1,
+  category: '',
+  indicator: '',
+  detail: '',
+  conditionType: '',
+  params: {},
+  value1: '',
+  value2: '',
+  shift: 1,
+  condTimeframe: '0',
+  confirmBars: 0
+};
+
+// ============================================================
+// グローバル状態: indiState
+// ============================================================
 const indiState = {
   type: 'arrow',
   platform: 'mt4',
@@ -126,6 +255,9 @@ const indiState = {
   displayStyle: 'solid',
   alerts: { popup: false, sound: false, push: false, email: false }
 };
+// ============================================================
+// [END A-001]
+// ============================================================
 
 
 
@@ -136,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupHomeScreen();
         setupEAFlow();
         setupIndicatorFlow();
-        setupGallery(); // �M�������[�̏�������ǉ�
+        setupGallery(); // ギャラリーの初期化を追加
         setupModals();
         setupBacktest();
         setupMTSettings(); // Initialize MT integration
@@ -252,7 +384,6 @@ function getEATemplate(id) {
         useAlertPush: false
     };
 
-
     if(id == 0) return base; // Blank
 
     // T-1: Perfect Order
@@ -290,16 +421,16 @@ function getEATemplate(id) {
         base.positionMode = 'multiple'; base.maxPositions = 10;
         base.strategies = ['grid'];
         base.positionParams = { gridStep: 20, gridLots: 0.1, gridMax: 10 };
-        base.buyConditions = [ { id: '4_1', category: 'price', indicator: 'price', detail: '��ɋ���', type: 'always_true', params: {}, shift: 1 } ];
-        base.sellConditions = [ { id: '4_2', category: 'price', indicator: 'price', detail: '��ɋ���', type: 'always_true', params: {}, shift: 1 } ];
+        base.buyConditions = [ { id: '4_1', category: 'price', indicator: 'price', detail: '常に許可', type: 'always_true', params: {}, shift: 1 } ];
+        base.sellConditions = [ { id: '4_2', category: 'price', indicator: 'price', detail: '常に許可', type: 'always_true', params: {}, shift: 1 } ];
         base.useMagicStopOrder = true; base.magicStopAmount = 50000;
         base.useSpreadFilter = true; base.maxSpread = 15;
     }
     // T-5: News Scalp
     if(id == 5) {
         base.eaName = 'News-Scalp-EA';
-        base.buyConditions = [ { id: '5_1', category: 'indicator', indicator: 'momentum', detail: 'Momentum�L��', type: 'mom_up', params: { period: 14 }, shift: 1 } ];
-        base.sellConditions = [ { id: '5_2', category: 'indicator', indicator: 'momentum', detail: 'Momentum�L��', type: 'mom_down', params: { period: 14 }, shift: 1 } ];
+        base.buyConditions = [ { id: '5_1', category: 'indicator', indicator: 'momentum', detail: 'Momentum有力', type: 'mom_up', params: { period: 14 }, shift: 1 } ];
+        base.sellConditions = [ { id: '5_2', category: 'indicator', indicator: 'momentum', detail: 'Momentum有力', type: 'mom_down', params: { period: 14 }, shift: 1 } ];
         base.useNewsFilter = false; 
         base.useAutoClose = true; base.autoCloseProfitPips = 5; base.autoCloseLossPips = 5;
     }
@@ -320,8 +451,8 @@ function getEATemplate(id) {
     // T-7: MACD Zero Cross
     if(id == 7) {
         base.eaName = 'MACD-Zero-Cross-EA';
-        base.buyConditions = [ { id: '7_1', category: 'indicator', indicator: 'macd', detail: '���C������0�𔲂���', type: 'macd_cross_zero_up', params: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }, shift: 1 } ];
-        base.sellConditions = [ { id: '7_2', category: 'indicator', indicator: 'macd', detail: '���C������0�𔲂���', type: 'macd_cross_zero_down', params: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }, shift: 1 } ];
+        base.buyConditions = [ { id: '7_1', category: 'indicator', indicator: 'macd', detail: 'メイン線が0を抜けた', type: 'macd_cross_zero_up', params: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }, shift: 1 } ];
+        base.sellConditions = [ { id: '7_2', category: 'indicator', indicator: 'macd', detail: 'メイン線が0を抜けた', type: 'macd_cross_zero_down', params: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 }, shift: 1 } ];
         base.useDayFilter = true; base.dayFilterDays = [false, true, true, true, true, false, false];
         base.useAutoClose = true; base.autoCloseProfitPips = 10; base.autoCloseLossPips = 10;
     }
@@ -338,16 +469,16 @@ function getEATemplate(id) {
     // T-9: Deep Value
     if(id == 9) {
         base.eaName = 'Deep-Value-EA';
-        base.buyConditions = [ { id: '9_1', category: 'price', indicator: 'price', detail: '���l�X�V', type: 'price_below', params: { price: 130.00 }, shift: 1 } ];
-        base.sellConditions = [ { id: '9_2', category: 'price', indicator: 'price', detail: '���l�X�V', type: 'price_above', params: { price: 160.00 }, shift: 1 } ];
+        base.buyConditions = [ { id: '9_1', category: 'price', indicator: 'price', detail: '安値更新', type: 'price_below', params: { price: 130.00 }, shift: 1 } ];
+        base.sellConditions = [ { id: '9_2', category: 'price', indicator: 'price', detail: '高値更新', type: 'price_above', params: { price: 160.00 }, shift: 1 } ];
         base.useSpreadFilter = true; base.maxSpread = 10;
         base.takeProfit = 100;
     }
     // T-10: Parabolic SAR
     if(id == 10) {
         base.eaName = 'Parabolic-SAR-EA';
-        base.buyConditions = [ { id: '10_1', category: 'indicator', indicator: 'parabolic', detail: 'SAR�㔲��', type: 'sar_cross_up', params: { step: 0.02, max: 0.2 }, shift: 1 } ];
-        base.sellConditions = [ { id: '10_2', category: 'indicator', indicator: 'parabolic', detail: 'SAR������', type: 'sar_cross_down', params: { step: 0.02, max: 0.2 }, shift: 1 } ];
+        base.buyConditions = [ { id: '10_1', category: 'indicator', indicator: 'parabolic', detail: 'SAR上抜け', type: 'sar_cross_up', params: { step: 0.02, max: 0.2 }, shift: 1 } ];
+        base.sellConditions = [ { id: '10_2', category: 'indicator', indicator: 'parabolic', detail: 'SAR下抜け', type: 'sar_cross_down', params: { step: 0.02, max: 0.2 }, shift: 1 } ];
         base.useNewsFilter = true;
         base.useTrailing = true; base.trailingStart = 40; base.trailingWidth = 20; base.trailingStep = 10;
         base.stopLoss = 40;
@@ -377,7 +508,7 @@ function applyTemplate(id) {
     showEAStep(1);
     
     if(typeof showToast === 'function') {
-        const msg = id === 0 ? '�S�ݒ����Z�b�g���܂���' : '�e���v���[�g�̐ݒ��K�p���܂���';
+        const msg = id === 0 ? '全設定をリセットしました' : 'テンプレートの設定を適用しました';
         showToast(msg, 'success');
     }
 }
@@ -593,9 +724,9 @@ function updateStrategyWarnings() {
     if (!warningBox || !warningText) return;
 
     const warnings = [];
-    if (eaState.strategies.includes('martingale')) warnings.push('�}�[�`���Q�[���͑傫�ȑ������X�N������܂�');
-    if (eaState.strategies.includes('nanpin') && eaState.strategies.includes('martingale')) warnings.push('�i���s��+�}�[�`���͔��Ƀn�C���X�N�ł�');
-    if (eaState.strategies.includes('grid') && eaState.strategies.includes('reverse_grid')) warnings.push('�O���b�h�Ƌt�O���b�h�̓����g�p�͕��G�ȋ����ɂȂ�܂�');
+    if (eaState.strategies.includes('martingale')) warnings.push('マーチンゲールは大きな損失リスクがあります');
+    if (eaState.strategies.includes('nanpin') && eaState.strategies.includes('martingale')) warnings.push('ナンピン+マーチンは非常にハイリスクです');
+    if (eaState.strategies.includes('grid') && eaState.strategies.includes('reverse_grid')) warnings.push('グリッドと逆グリッドの同時使用は複雑な挙動になります');
 
     if (warnings.length > 0) {
         warningText.textContent = warnings.join(' / ');
@@ -605,7 +736,7 @@ function updateStrategyWarnings() {
     }
 }
 // ============================================================
-// [A-025] setupStep2 - �G���g���[���
+// [A-025] setupStep2 - エントリー条件
 // ============================================================
 function setupStep2() {
   console.log('setupStep2 called');
@@ -638,10 +769,10 @@ function setupStep2() {
 
 
 // ============================================================
-// [A-035] setupStep4 - �t�B���^�[�ݒ�
+// [A-035] setupStep4 - フィルター設定
 // ============================================================
 function setupStep4() {
-  // �X�v���b�h�t�B���^�[
+  // スプレッドフィルター
   const spreadCheck = document.getElementById('use-spread-filter');
   if (spreadCheck) {
     spreadCheck.checked = eaState.useSpreadFilter;
@@ -657,7 +788,7 @@ function setupStep4() {
     });
   }
 
-  // ���ԃt�B���^�[
+  // 時間フィルター
   const timeCheck = document.getElementById('use-time-filter');
   if (timeCheck) {
     timeCheck.checked = eaState.useTimeFilter;
@@ -680,7 +811,7 @@ function setupStep4() {
     });
   }
 
-  // �p�[�t�F�N�g�I�[�_�[
+  // パーフェクトオーダー
   const poCheck = document.getElementById('use-perfect-order');
   if (poCheck) {
     poCheck.checked = eaState.usePerfectOrder;
@@ -704,7 +835,7 @@ function setupStep4() {
     poMa3.addEventListener('change', (e) => { eaState.poLongPeriod = parseInt(e.target.value) || 100; });
   }
 
-  // ADX�t�B���^�[
+  // ADXフィルター
   const adxCheck = document.getElementById('use-adx-filter');
   if (adxCheck) {
     adxCheck.checked = eaState.useAdxFilter;
@@ -723,7 +854,7 @@ function setupStep4() {
     adxThreshold.addEventListener('change', (e) => { eaState.adxFilterLevel = parseInt(e.target.value) || 25; });
   }
 
-  // �S�g�[���t�B���^�[
+  // ゴトー日フィルター
   const gotoCheck = document.getElementById('use-goto-filter');
   if (gotoCheck) {
     gotoCheck.checked = eaState.useGotoFilter;
@@ -757,7 +888,7 @@ function setupStep4() {
     gotoMonthEnd.addEventListener('change', (e) => { eaState.gotoIncludeMonthEnd = e.target.checked; });
   }
 
-  // �j���[�X�t�B���^�[
+  // ニュースフィルター
   const newsCheck = document.getElementById('use-news-filter');
   if (newsCheck) {
     newsCheck.checked = eaState.useNewsFilter;
@@ -791,7 +922,7 @@ function setupStep4() {
         eaState.newsEvents.push({
           hour: parseInt(hour.value) || 0,
           min: parseInt(min.value) || 0,
-          label: label.value || '�C�x���g'
+          label: label.value || 'イベント'
         });
         hour.value = ''; min.value = ''; label.value = '';
         renderNewsEventList();
@@ -799,7 +930,7 @@ function setupStep4() {
     });
   }
 
-  // �����p�l���\��
+  // 初期パネル表示
   // Removed the manual .hidden class addition here. 
   // Step 3/4 toggle-card-settings are now hidden by CSS (display: none) by default.
 }
@@ -808,7 +939,7 @@ function renderNewsEventList() {
   const listEl = document.getElementById('news-event-list');
   if (!listEl) return;
   if (eaState.newsEvents.length === 0) {
-    listEl.innerHTML = '<p class="form-hint">�w�W�C�x���g���o�^</p>';
+    listEl.innerHTML = '<p class="form-hint">指標イベント未登録</p>';
     return;
   }
   listEl.innerHTML = '';
@@ -819,7 +950,7 @@ function renderNewsEventList() {
     info.textContent = `${String(ev.hour).padStart(2,'0')}:${String(ev.min).padStart(2,'0')} - ${ev.label}`;
     const removeBtn = document.createElement('button');
     removeBtn.className = 'condition-remove-btn';
-    removeBtn.textContent = '�~';
+    removeBtn.textContent = '×';
     removeBtn.addEventListener('click', () => {
       eaState.newsEvents.splice(i, 1);
       renderNewsEventList();
@@ -1007,12 +1138,12 @@ function togglePanel(panelId, show) {
 // ============================================================
 function getExitMethodLabel(id) {
   const labels = {
-    'stoploss':       '�X�g�b�v���X (SL)',
-    'takeprofit':     '�e�C�N�v���t�B�b�g (TP)',
-    'trailing':       '�g���[�����O�X�g�b�v',
-    'autoclose':      '��������',
-    'indicator_exit': '�C���W�P�[�^�[����',
-    'manual_close':   '�蓮���σ{�^��'
+    'stoploss':       'ストップロス (SL)',
+    'takeprofit':     'テイクプロフィット (TP)',
+    'trailing':       'トレーリングストップ',
+    'autoclose':      '自動決済',
+    'indicator_exit': 'インジケーター決済',
+    'manual_close':   '手動決済ボタン'
   };
   return labels[id] || id;
 }
@@ -1038,7 +1169,7 @@ function updateExitPriorityList() {
   const activeItems = eaState.exitPriority.filter(id => isExitMethodActive(id));
 
   if (activeItems.length === 0) {
-    listEl.innerHTML = '<p class="empty-list">�L���ȃG�O�W�b�g���@������܂���</p>';
+    listEl.innerHTML = '<p class="empty-list">有効なエグジット方法がありません</p>';
     return;
   }
 
@@ -1058,7 +1189,7 @@ function updateExitPriorityList() {
 
     const dragHandle = document.createElement('div');
     dragHandle.className = 'exit-priority-drag-handle';
-    dragHandle.textContent = '?';
+    dragHandle.textContent = '⠿';
 
     item.appendChild(number);
     item.appendChild(label);
@@ -1123,7 +1254,7 @@ function moveExitPriority(id, direction) {
 
 // ==================== A-040: Step 5-6 setup + Code Gen ====================
 function setupStep5() {
-    // --- EA��{�ݒ� ---
+    // --- EA基本設定 ---
     const eaNameInput = document.getElementById('input-ea-name');
     if (eaNameInput) {
       eaNameInput.value = eaState.eaName;
@@ -1193,7 +1324,7 @@ function setupStep5() {
       discordDaily.addEventListener('change', (e) => { eaState.discordNotifyDaily = e.target.checked; });
     }
 
-    // --- �A���[�g�ݒ� ---
+    // --- アラート設定 ---
     const alertPopupCheckbox = document.getElementById('chk-alert-popup');
     if (alertPopupCheckbox) {
       alertPopupCheckbox.checked = eaState.useAlertPopup;
@@ -1246,7 +1377,7 @@ function setupStep6() {
     const settingsFileInput = document.getElementById('settings-file-input');
     if (settingsFileInput) settingsFileInput.addEventListener('change', loadSettings);
 
-    // --- �ǉ�: �F�؃K�[�h�̐ݒ� ---
+    // --- 追加: 認証ガードの設定 ---
     const accLock = document.getElementById('use-account-lock');
     const accId = document.getElementById('lock-account-id');
     if (accLock && accId) {
@@ -1281,10 +1412,10 @@ function generateCode() {
         const code = EAGenerator.generate(eaState);
         const codeElement = document.getElementById('generated-code');
         if (codeElement) codeElement.textContent = code;
-        showToast('�R�[�h�𐶐����܂���', 'success');
+        showToast('コードを生成しました', 'success');
     } catch (error) {
         console.error('Code generation error:', error);
-        showToast('�R�[�h�����G���[: ' + error.message, 'error');
+        showToast('コード生成エラー: ' + error.message, 'error');
     }
 }
 
@@ -1295,11 +1426,11 @@ function checkCode() {
 
 function validateGeneratedCode() {
     const errors = [];
-    if (eaState.buyConditions.length === 0 && eaState.sellConditions.length === 0) errors.push('�G���g���[������ݒ肳��Ă��܂���');
-    if (!eaState.useTP && !eaState.useSL && !eaState.useTrailing && !eaState.useAutoClose && !eaState.useIndicatorExit) errors.push('���σ��[�����ݒ肳��Ă��܂���');
-    if (eaState.strategies.includes('martingale')) errors.push('�x��: �}�[�`���Q�[���헪�͍����X�N�ł�');
-    if (eaState.strategies.includes('nanpin') && eaState.positionParams.nanpinMax > 10) errors.push('�x��: �i���s���񐔂���������\��������܂�');
-    if (eaState.lotSize > 1) errors.push('�x��: ���b�g�T�C�Y���傫���ł��F' + eaState.lotSize);
+    if (eaState.buyConditions.length === 0 && eaState.sellConditions.length === 0) errors.push('エントリー条件が設定されていません');
+    if (!eaState.useTP && !eaState.useSL && !eaState.useTrailing && !eaState.useAutoClose && !eaState.useIndicatorExit) errors.push('決済ルールが設定されていません');
+    if (eaState.strategies.includes('martingale')) errors.push('警告: マーチンゲール戦略は高リスクです');
+    if (eaState.strategies.includes('nanpin') && eaState.positionParams.nanpinMax > 10) errors.push('警告: ナンピン回数が多すぎる可能性があります');
+    if (eaState.lotSize > 1) errors.push('警告: ロットサイズが大きいです：' + eaState.lotSize);
     return errors;
 }
 
@@ -1322,10 +1453,10 @@ function copyCode() {
     const codeElement = document.getElementById('generated-code');
     if (codeElement) {
         navigator.clipboard.writeText(codeElement.textContent).then(() => {
-            showToast('�R�[�h��R�s�[���܂���', 'success');
+            showToast('コードをコピーしました', 'success');
         }).catch(err => {
             console.error('Copy failed:', err);
-            showToast('�R�s�[�Ɏ��s���܂���', 'error');
+            showToast('コピーに失敗しました', 'error');
         });
     }
 }
@@ -1345,7 +1476,7 @@ function downloadCode() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast(`${filename} ��_�E�����[�h���܂���`, 'success');
+        showToast(`${filename} をダウンロードしました`, 'success');
     }
 }
 
@@ -1360,7 +1491,7 @@ function saveSettings() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('�ݒ��ۑ����܂���', 'success');
+    showToast('設定を保存しました', 'success');
 }
 
 function loadSettings(event) {
@@ -1372,10 +1503,10 @@ function loadSettings(event) {
                 const settings = JSON.parse(e.target.result);
                 Object.assign(eaState, settings);
                 applyStateToUI();
-                showToast('�ݒ��ǂݍ��݂܂���', 'success');
+                showToast('設定を読み込みました', 'success');
             } catch (error) {
                 console.error('Settings load error:', error);
-                showToast('�ݒ�̓ǂݍ��݂Ɏ��s���܂���', 'error');
+                showToast('設定の読み込みに失敗しました', 'error');
             }
         };
         reader.readAsText(file);
@@ -1384,7 +1515,7 @@ function loadSettings(event) {
 }
 // //END A-040
 // ============================================================
-// [A-050] applyStateToUI - �SUI���� (������)
+// [A-050] applyStateToUI - 全UI復元 (完成版)
 // ============================================================
 function applyStateToUI() {
   // Helper: safely set value/checked on an element
@@ -1403,17 +1534,17 @@ function applyStateToUI() {
     }
   }
 
-  // --- Step 1: �|�W�V�����Ǘ� ---
+  // --- Step 1: ポジション管理 ---
   setVal('entry-cooldown', eaState.entryCooldown);
   setVal('max-positions', eaState.maxPositions);
 
-  // --- Step 2: �G���g���[��� ---
+  // --- Step 2: エントリー条件 ---
   setVal('timeframe', eaState.timeframe);
   setVal('condition-combine', eaState.buyCombine);
   updateConditionList('buy');
   updateConditionList('sell');
 
-  // --- Step 3: ���ϐݒ� ---
+  // --- Step 3: 決済設定 ---
   setVal('take-profit', eaState.takeProfit);
   setVal('stop-loss', eaState.stopLoss);
 
@@ -1440,7 +1571,7 @@ function applyStateToUI() {
   updateExitConditionList();
   updateExitPriorityList();
 
-  // --- Step 4: �t�B���^�[�ݒ� ---
+  // --- Step 4: フィルター設定 ---
   setChk('use-spread-filter', eaState.useSpreadFilter);
   togglePanel('spread-filter-settings', eaState.useSpreadFilter);
   setVal('max-spread', eaState.maxSpread);
@@ -1483,7 +1614,7 @@ function applyStateToUI() {
     setChk(id, eaState.dayFilterDays[i]);
   });
 
-  // --- Step 5: �o�́E�ʒm�ݒ� ---
+  // --- Step 5: 出力・通知設定 ---
   setVal('input-ea-name', eaState.eaName);
   setVal('input-magic-number', eaState.magicNumber);
   setVal('input-lot-size', eaState.lotSize);
@@ -1506,7 +1637,7 @@ function applyStateToUI() {
   setChk('chk-alert-email', eaState.useAlertEmail);
   setChk('chk-alert-push', eaState.useAlertPush);
 
-  // --- Step 4/5 �ǉ����� ---
+  // --- Step 4/5 追加項目 ---
   setChk('use-month-filter', eaState.useMonthFilter);
   togglePanel('month-filter-settings', eaState.useMonthFilter);
   setVal('month-start-days', eaState.monthStartDays);
@@ -1570,13 +1701,13 @@ function setupBacktest() {
 function showEAStep(stepNum) {
     if (typeof closeWizard === 'function') closeWizard();
     
-    // �z�[����ʂƃx�[�X�̃t���[�R���e�i�̕\������
+    // ホーム画面とベースのフローコンテナの表示制御
     const home = document.getElementById('home-screen');
     const flow = document.getElementById('ea-flow');
     if (home) home.classList.add('hidden');
     if (flow) flow.classList.remove('hidden');
 
-    // �S�X�e�b�v�i0-8�j��m���ɉB��
+    // 全ステップ（0-8）を確実に隠す
     for (let i = 0; i <= 8; i++) { 
         const s = document.getElementById(`ea-step-${i}`); 
         if (s) {
@@ -1584,7 +1715,7 @@ function showEAStep(stepNum) {
             s.style.display = 'none'; 
         }
     }
-    // �ΏۃX�e�b�v��\��
+    // 対象ステップを表示
     const target = document.getElementById(`ea-step-${stepNum}`); 
     if (target) {
         target.classList.remove('hidden');
@@ -1675,13 +1806,13 @@ function generateIndicatorCode() {
     try {
         const code = IndicatorGenerator.generate(indiState);
         const el = document.getElementById('indi-generated-code'); if (el) el.textContent = code;
-        showToast('�C���W�P�[�^�[�R�[�h�𐶐����܂���', 'success');
-    } catch (error) { console.error('Indicator code generation error:', error); showToast('�R�[�h�����G���[: ' + error.message, 'error'); }
+        showToast('インジケーターコードを生成しました', 'success');
+    } catch (error) { console.error('Indicator code generation error:', error); showToast('コード生成エラー: ' + error.message, 'error'); }
 }
 
 function copyIndicatorCode() {
     const el = document.getElementById('indi-generated-code');
-    if (el) navigator.clipboard.writeText(el.textContent).then(() => { showToast('�R�[�h��R�s�[���܂���', 'success'); }).catch(() => { showToast('�R�s�[�Ɏ��s���܂���', 'error'); });
+    if (el) navigator.clipboard.writeText(el.textContent).then(() => { showToast('コードをコピーしました', 'success'); }).catch(() => { showToast('コピーに失敗しました', 'error'); });
 }
 
 function downloadIndicatorCode() {
@@ -1694,7 +1825,7 @@ function downloadIndicatorCode() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = filename;
         document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-        showToast(`${filename} ��_�E�����[�h���܂���`, 'success');
+        showToast(`${filename} をダウンロードしました`, 'success');
     }
 }
 
@@ -1751,11 +1882,11 @@ function openWizard(targetType) {
   const titleEl = document.getElementById('wizard-title');
   if (titleEl) {
     if (targetType === 'buy') {
-      titleEl.textContent = 'Buy �G���g���[�����ǉ�';
+      titleEl.textContent = 'Buy エントリー条件を追加';
     } else if (targetType === 'sell') {
-      titleEl.textContent = 'Sell �G���g���[�����ǉ�';
+      titleEl.textContent = 'Sell エントリー条件を追加';
     } else if (targetType === 'exit') {
-      titleEl.textContent = '�G�O�W�b�g�����ǉ�';
+      titleEl.textContent = 'エグジット条件を追加';
     }
   }
 
@@ -1778,9 +1909,9 @@ function renderWizardStep1() {
   container.innerHTML = '';
 
   const categories = [
-    { id: 'indicator', label: '�C���W�P�[�^�[', icon: '??', desc: 'MA�ARSI�AMACD���̎�v�w�W' },
-    { id: 'candle',    label: '���[�\�N��',     icon: '???', desc: '�z���E�A����s���o�[���̌`��' },
-    { id: 'price',     label: '���i',           icon: '??', desc: '����̉��i�����⍂�l�E���l' }
+    { id: 'indicator', label: 'インジケーター', icon: '📊', desc: 'MA、RSI、MACD等の主要指標' },
+    { id: 'candle',    label: 'ローソク足',     icon: '🕯️', desc: '陽線・陰線やピンバー等の形状' },
+    { id: 'price',     label: '価格',           icon: '💰', desc: '特定の価格水準や高値・安値' }
   ];
 
   const grid = document.createElement('div');
@@ -1814,34 +1945,35 @@ function renderWizardStep2() {
   let items = [];
   if (wizardState.category === 'indicator') {
     items = [
-      { id: 'ma',             label: '�ړ����ϐ�(MA)', desc: '�g�����h�̕����m�F' },
-      { id: 'ma_cross',       label: 'MA�N���X��p', desc: '�Z���ƒ����̃N���X�𔻒�' },
-      { id: 'ma_perfect',     label: 'MA�p�[�t�F�N�g�I�[�_�[', desc: '3?4�{�̕��т𔻒�' },
-      { id: 'ma_deviation',   label: 'MA������', desc: '���i��MA�̘����𑪒�' },
-      { id: 'heiken_ashi',    label: '���ϑ�', desc: '�g�����h�ϑJ�𔻒�' },
-      { id: 'bollinger',      label: '�{�����W���[�o���h', desc: '�{���e�B���e�B�Ɣ����m�F' },
-      { id: 'rsi',            label: 'RSI', desc: '����ꂷ���E����ꂷ���𔻒f' },
-      { id: 'macd',           label: 'MACD', desc: '�g�����h�̓]���_��T��' },
-      { id: 'stochastic',     label: '�X�g�L���X', desc: '�����W�ł̋t����ɗL��' },
-      { id: 'adx',            label: 'ADX', desc: '�g�����h�̋����𑪒�' },
-      { id: 'ichimoku',       label: '��ڋύt�\', desc: '�����I�ȑ�����𕪐�' },
-      { id: 'atr',            label: 'ATR', desc: '�{���e�B���e�B�̕ϓ��𑪒�' },
-      { id: 'round_numbers',  label: '�L���o���擾', desc: '100pips���̐ߖڂ𔻒�' }
+      { id: 'ma',             label: '移動平均線(MA)', desc: 'トレンドの方向確認' },
+      { id: 'ma_cross',       label: 'MAクロス専用', desc: '短期と長期のクロスを判定' },
+      { id: 'ma_perfect',     label: 'MAパーフェクトオーダー', desc: '3〜4本の並びを判定' },
+      { id: 'ma_deviation',   label: 'MA乖離率', desc: '価格とMAの乖離を測定' },
+      { id: 'heiken_ashi',    label: '平均足', desc: 'トレンド変遷を判定' },
+      { id: 'bollinger',      label: 'ボリンジャーバンド', desc: 'ボラティリティと反発確認' },
+      { id: 'rsi',            label: 'RSI', desc: '買われすぎ・売られすぎを判断' },
+      { id: 'macd',           label: 'MACD', desc: 'トレンドの転換点を探る' },
+      { id: 'stochastic',     label: 'ストキャス', desc: 'レンジでの逆張りに有効' },
+      { id: 'adx',            label: 'ADX', desc: 'トレンドの強さを測定' },
+      { id: 'ichimoku',       label: '一目均衡表', desc: '複合的な相場環境を分析' },
+      { id: 'atr',            label: 'ATR', desc: 'ボラティリティの変動を測定' },
+      { id: 'round_numbers',  label: 'キリバン取得', desc: '100pips等の節目を判定' },
+      { id: 'holiday_filter', label: '祝日制御', desc: '主要国の祝日にトレード停止' }
     ];
   } else if (wizardState.category === 'candle') {
     items = [
-      { id: 'bullish',       label: '�z��', desc: '�㏸�̐�����m�F' },
-      { id: 'bearish',       label: '�A��', desc: '�����̐�����m�F' },
-      { id: 'pinbar_bull',   label: '���C�s���o�[', desc: '���l���ł̔��]�V�O�i��' },
-      { id: 'pinbar_bear',   label: '��C�s���o�[', desc: '���l���ł̔��]�V�O�i��' },
-      { id: 'engulfing_bull',label: '�z����ݑ�', desc: '�����㏸�]���̒���' },
-      { id: 'engulfing_bear',label: '�A����ݑ�', desc: '���������]���̒���' }
+      { id: 'bullish',       label: '陽線', desc: '上昇の勢いを確認' },
+      { id: 'bearish',       label: '陰線', desc: '下落の勢いを確認' },
+      { id: 'pinbar_bull',   label: '強気ピンバー', desc: '安値圏での反転シグナル' },
+      { id: 'pinbar_bear',   label: '弱気ピンバー', desc: '高値圏での反転シグナル' },
+      { id: 'engulfing_bull',label: '陽線包み足', desc: '強い上昇転換の兆し' },
+      { id: 'engulfing_bear',label: '陰線包み足', desc: '強い下落転換の兆し' }
     ];
   } else {
     items = [
-      { id: 'price_above',  label: '���i��������', desc: '�L���Ԃ␅�����Ƃ̔�r' },
-      { id: 'price_below',  label: '���i������艺', desc: '�L���Ԃ␅�����Ƃ̔�r' },
-      { id: 'price_break',  label: '���i�u���C�N',   desc: '���胉�C���̓˔j��m�F' }
+      { id: 'price_above',  label: '価格が○より上', desc: 'キリ番や水平線との比較' },
+      { id: 'price_below',  label: '価格が○より下', desc: 'キリ番や水平線との比較' },
+      { id: 'price_break',  label: '価格ブレイク',   desc: '特定ラインの突破を確認' }
     ];
   }
 
@@ -1851,7 +1983,7 @@ function renderWizardStep2() {
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.className = 'wizard-search-input';
-  searchInput.placeholder = '�C���W�P�[�^�[�����...';
+  searchInput.placeholder = 'インジケーターを検索...';
   searchContainer.appendChild(searchInput);
   container.appendChild(searchContainer);
 
@@ -1905,7 +2037,7 @@ function renderWizardStep3() {
 
   const grid = document.createElement('div');
   grid.className = 'wizard-card-grid';
-  // ����^�C�v�͖��O���������߁A2��Œ�ɂ���X�^�C����ꎞ�I�ɓK�p
+  // 条件タイプは名前が長いため、2列固定にするスタイルを一時的に適用
   grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
 
   conditions.forEach(cond => {
@@ -1931,218 +2063,189 @@ function getIndicatorConditions(indicator) {
   switch (indicator) {
     case 'ma':
       return [
-        { id: 'cross_up',    label: '�S�[���f���N���X(�Z����������㔲��)' },
-        { id: 'cross_down',  label: '�f�b�h�N���X(�Z���������������)' },
-        { id: 'above',       label: '�Z��MA������MA����' },
-        { id: 'below',       label: '�Z��MA������MA��艺' },
-        { id: 'price_above', label: '���i��MA����' },
-        { id: 'price_below', label: '���i��MA��艺' }
+        { id: 'cross_up',    label: 'ゴールデンクロス(短期が長期を上抜け)' },
+        { id: 'cross_down',  label: 'デッドクロス(短期が長期を下抜け)' },
+        { id: 'above',       label: '短期MAが長期MAより上' },
+        { id: 'below',       label: '短期MAが長期MAより下' },
+        { id: 'price_above', label: '価格がMAより上' },
+        { id: 'price_below', label: '価格がMAより下' }
       ];
     case 'bollinger':
       return [
-        { id: 'touch_upper',  label: '���i����o���h�Ƀ^�b�`' },
-        { id: 'touch_lower',  label: '���i�����o���h�Ƀ^�b�`' },
-        { id: 'break_upper',  label: '���i����o���h��u���C�N' },
-        { id: 'break_lower',  label: '���i�����o���h��u���C�N' },
-        { id: 'squeeze',      label: '�o���h�����k��(�X�N�C�[�Y)' },
-        { id: 'expansion',    label: '�o���h�����g��(�G�N�X�p���V����)' },
-        { id: 'inside_bands', label: '���i���o���h��' },
-        { id: 'walk_upper',   label: '�o���h�E�H�[�N(��)' },
-        { id: 'walk_lower',   label: '�o���h�E�H�[�N(��)' }
+        { id: 'touch_upper',  label: '価格が上バンドにタッチ' },
+        { id: 'touch_lower',  label: '価格が下バンドにタッチ' },
+        { id: 'break_upper',  label: '価格が上バンドをブレイク' },
+        { id: 'break_lower',  label: '価格が下バンドをブレイク' },
+        { id: 'squeeze',      label: 'バンド幅が縮小(スクイーズ)' },
+        { id: 'expansion',    label: 'バンド幅が拡大(エクスパンション)' },
+        { id: 'inside_bands', label: '価格がバンド内' },
+        { id: 'walk_upper',   label: 'バンドウォーク(上)' },
+        { id: 'walk_lower',   label: 'バンドウォーク(下)' }
       ];
     case 'rsi':
       return [
-        { id: 'above_level',  label: 'RSI�����x������' },
-        { id: 'below_level',  label: 'RSI�����x����艺' },
-        { id: 'cross_up',     label: 'RSI�����x����㔲��' },
-        { id: 'cross_down',   label: 'RSI�����x���������' }
+        { id: 'above_level',  label: 'RSIがレベルより上' },
+        { id: 'below_level',  label: 'RSIがレベルより下' },
+        { id: 'cross_up',     label: 'RSIがレベルを上抜け' },
+        { id: 'cross_down',   label: 'RSIがレベルを下抜け' }
       ];
     case 'macd':
       return [
-        { id: 'cross_up',     label: 'MACD���C�����V�O�i����㔲��' },
-        { id: 'cross_down',   label: 'MACD���C�����V�O�i���������' },
-        { id: 'above_zero',   label: 'MACD���C�����[������' },
-        { id: 'below_zero',   label: 'MACD���C�����[����艺' },
-        { id: 'histogram_up', label: '�q�X�g�O����������' },
-        { id: 'histogram_dn', label: '�q�X�g�O����������' }
+        { id: 'cross_up',     label: 'MACDラインがシグナルを上抜け' },
+        { id: 'cross_down',   label: 'MACDラインがシグナルを下抜け' },
+        { id: 'above_zero',   label: 'MACDラインがゼロより上' },
+        { id: 'below_zero',   label: 'MACDラインがゼロより下' },
+        { id: 'histogram_up', label: 'ヒストグラムが増加' },
+        { id: 'histogram_dn', label: 'ヒストグラムが減少' }
       ];
     case 'stochastic':
       return [
-        { id: 'cross_up',     label: '%K��%D��㔲��' },
-        { id: 'cross_down',   label: '%K��%D�������' },
-        { id: 'above_level',  label: '%K�����x������' },
-        { id: 'below_level',  label: '%K�����x����艺' }
+        { id: 'cross_up',     label: '%Kが%Dを上抜け' },
+        { id: 'cross_down',   label: '%Kが%Dを下抜け' },
+        { id: 'above_level',  label: '%Kがレベルより上' },
+        { id: 'below_level',  label: '%Kがレベルより下' }
       ];
     case 'cci':
       return [
-        { id: 'above_level',  label: 'CCI�����x������' },
-        { id: 'below_level',  label: 'CCI�����x����艺' },
-        { id: 'cross_up',     label: 'CCI�����x����㔲��' },
-        { id: 'cross_down',   label: 'CCI�����x���������' }
+        { id: 'above_level',  label: 'CCIがレベルより上' },
+        { id: 'below_level',  label: 'CCIがレベルより下' },
+        { id: 'cross_up',     label: 'CCIがレベルを上抜け' },
+        { id: 'cross_down',   label: 'CCIがレベルを下抜け' }
       ];
     case 'adx':
       return [
-        { id: 'above_level',  label: 'ADX�����x������(�g�����h����)' },
-        { id: 'below_level',  label: 'ADX�����x����艺(�g�����h�ア)' },
-        { id: 'di_cross_up',  label: '+DI��-DI��㔲��' },
-        { id: 'di_cross_down',label: '+DI��-DI�������' }
+        { id: 'above_level',  label: 'ADXがレベルより上(トレンド強い)' },
+        { id: 'below_level',  label: 'ADXがレベルより下(トレンド弱い)' },
+        { id: 'di_cross_up',  label: '+DIが-DIを上抜け' },
+        { id: 'di_cross_down',label: '+DIが-DIを下抜け' }
       ];
     case 'atr':
       return [
-        { id: 'above_level',  label: 'ATR���l����' },
-        { id: 'below_level',  label: 'ATR���l��艺' }
+        { id: 'above_level',  label: 'ATRが値より上' },
+        { id: 'below_level',  label: 'ATRが値より下' }
       ];
     case 'ichimoku':
       return [
-        { id: 'tenkan_above_kijun', label: '�]�������������' },
-        { id: 'tenkan_below_kijun', label: '�]�����������艺' },
-        { id: 'tenkan_cross_up',    label: '�]�����������㔲��' },
-        { id: 'tenkan_cross_down',  label: '�]����������������' },
-        { id: 'price_above_cloud',  label: '���i���_����' },
-        { id: 'price_below_cloud',  label: '���i���_��艺' },
-        { id: 'price_in_cloud',     label: '���i���_�̒�' },
-        { id: 'chikou_above',       label: '�x�s�X�p�������i����' },
-        { id: 'chikou_below',       label: '�x�s�X�p�������i��艺' }
+        { id: 'tenkan_above_kijun', label: '転換線が基準線より上' },
+        { id: 'tenkan_below_kijun', label: '転換線が基準線より下' },
+        { id: 'tenkan_cross_up',    label: '転換線が基準線を上抜け' },
+        { id: 'tenkan_cross_down',  label: '転換線が基準線を下抜け' },
+        { id: 'price_above_cloud',  label: '価格が雲より上' },
+        { id: 'price_below_cloud',  label: '価格が雲より下' },
+        { id: 'price_in_cloud',     label: '価格が雲の中' },
+        { id: 'chikou_above',       label: '遅行スパンが価格より上' },
+        { id: 'chikou_below',       label: '遅行スパンが価格より下' }
       ];
     case 'envelope':
       return [
-        { id: 'touch_upper',  label: '���i���ド�C���Ƀ^�b�`' },
-        { id: 'touch_lower',  label: '���i�������C���Ƀ^�b�`' },
-        { id: 'break_upper',  label: '���i���ド�C����u���C�N' },
-        { id: 'break_lower',  label: '���i�������C����u���C�N' }
+        { id: 'touch_upper',  label: '価格が上ラインにタッチ' },
+        { id: 'touch_lower',  label: '価格が下ラインにタッチ' },
+        { id: 'break_upper',  label: '価格が上ラインをブレイク' },
+        { id: 'break_lower',  label: '価格が下ラインをブレイク' }
       ];
     case 'parabolic':
       return [
-        { id: 'below_price',  label: 'SAR�����i�̉�(�㏸�g�����h)' },
-        { id: 'above_price',  label: 'SAR�����i�̏�(���~�g�����h)' },
-        { id: 'flip_up',      label: 'SAR���������ɔ��]' },
-        { id: 'flip_down',    label: 'SAR���ォ�牺�ɔ��]' }
+        { id: 'below_price',  label: 'SARが価格の下(上昇トレンド)' },
+        { id: 'above_price',  label: 'SARが価格の上(下降トレンド)' },
+        { id: 'flip_up',      label: 'SARが下から上に反転' },
+        { id: 'flip_down',    label: 'SARが上から下に反転' }
       ];
     case 'williams':
       return [
-        { id: 'above_level',  label: '%R�����x������' },
-        { id: 'below_level',  label: '%R�����x����艺' },
-        { id: 'cross_up',     label: '%R�����x����㔲��' },
-        { id: 'cross_down',   label: '%R�����x���������' }
+        { id: 'above_level',  label: '%Rがレベルより上' },
+        { id: 'below_level',  label: '%Rがレベルより下' },
+        { id: 'cross_up',     label: '%Rがレベルを上抜け' },
+        { id: 'cross_down',   label: '%Rがレベルを下抜け' }
       ];
     case 'demarker':
       return [
-        { id: 'above_level',  label: 'DeMarker�����x������' },
-        { id: 'below_level',  label: 'DeMarker�����x����艺' },
-        { id: 'cross_up',     label: 'DeMarker�����x����㔲��' },
-        { id: 'cross_down',   label: 'DeMarker�����x���������' }
+        { id: 'above_level',  label: 'DeMarkerがレベルより上' },
+        { id: 'below_level',  label: 'DeMarkerがレベルより下' },
+        { id: 'cross_up',     label: 'DeMarkerがレベルを上抜け' },
+        { id: 'cross_down',   label: 'DeMarkerがレベルを下抜け' }
       ];
     case 'momentum':
       return [
-        { id: 'above_100',    label: '�������^����100����' },
-        { id: 'below_100',    label: '�������^����100��艺' },
-        { id: 'cross_up',     label: '�������^����100��㔲��' },
-        { id: 'cross_down',   label: '�������^����100�������' }
+        { id: 'above_100',    label: 'モメンタムが100より上' },
+        { id: 'below_100',    label: 'モメンタムが100より下' },
+        { id: 'cross_up',     label: 'モメンタムが100を上抜け' },
+        { id: 'cross_down',   label: 'モメンタムが100を下抜け' }
       ];
     case 'osma':
       return [
-        { id: 'above_zero',   label: 'OsMA���[������' },
-        { id: 'below_zero',   label: 'OsMA���[����艺' },
-        { id: 'cross_up',     label: 'OsMA���[����㔲��' },
-        { id: 'cross_down',   label: 'OsMA���[���������' }
+        { id: 'above_zero',   label: 'OsMAがゼロより上' },
+        { id: 'below_zero',   label: 'OsMAがゼロより下' },
+        { id: 'cross_up',     label: 'OsMAがゼロを上抜け' },
+        { id: 'cross_down',   label: 'OsMAがゼロを下抜け' }
       ];
     case 'ao':
       return [
-        { id: 'above_zero',   label: 'AO���[������' },
-        { id: 'below_zero',   label: 'AO���[����艺' },
-        { id: 'cross_up',     label: 'AO���[����㔲��' },
-        { id: 'cross_down',   label: 'AO���[���������' },
-        { id: 'saucer_buy',   label: '�\�[�T�[(����)' },
-        { id: 'saucer_sell',  label: '�\�[�T�[(����)' }
+        { id: 'above_zero',   label: 'AOがゼロより上' },
+        { id: 'below_zero',   label: 'AOがゼロより下' },
+        { id: 'cross_up',     label: 'AOがゼロを上抜け' },
+        { id: 'cross_down',   label: 'AOがゼロを下抜け' },
+        { id: 'saucer_buy',   label: 'ソーサー(買い)' },
+        { id: 'saucer_sell',  label: 'ソーサー(売り)' }
       ];
     case 'ac':
       return [
-        { id: 'above_zero',   label: 'AC���[������' },
-        { id: 'below_zero',   label: 'AC���[����艺' },
-        { id: 'rising',       label: 'AC���㏸��' },
-        { id: 'falling',      label: 'AC��������' }
+        { id: 'above_zero',   label: 'ACがゼロより上' },
+        { id: 'below_zero',   label: 'ACがゼロより下' },
+        { id: 'rising',       label: 'ACが上昇中' },
+        { id: 'falling',      label: 'ACが下落中' }
       ];
     case 'rvi':
       return [
-        { id: 'cross_up',     label: 'RVI���V�O�i����㔲��' },
-        { id: 'cross_down',   label: 'RVI���V�O�i���������' },
-        { id: 'above_zero',   label: 'RVI���[������' },
-        { id: 'below_zero',   label: 'RVI���[����艺' }
+        { id: 'cross_up',     label: 'RVIがシグナルを上抜け' },
+        { id: 'cross_down',   label: 'RVIがシグナルを下抜け' },
+        { id: 'above_zero',   label: 'RVIがゼロより上' },
+        { id: 'below_zero',   label: 'RVIがゼロより下' }
       ];
     case 'bears':
       return [
-        { id: 'above_zero',   label: 'Bears Power���[������' },
-        { id: 'below_zero',   label: 'Bears Power���[����艺' },
-        { id: 'rising',       label: 'Bears Power���㏸��' },
-        { id: 'falling',      label: 'Bears Power�����~��' }
+        { id: 'above_zero',   label: 'Bears Powerがゼロより上' },
+        { id: 'below_zero',   label: 'Bears Powerがゼロより下' },
+        { id: 'rising',       label: 'Bears Powerが上昇中' },
+        { id: 'falling',      label: 'Bears Powerが下降中' }
       ];
     case 'bulls':
       return [
-        { id: 'above_zero',   label: 'Bulls Power���[������' },
-        { id: 'below_zero',   label: 'Bulls Power���[����艺' },
-        { id: 'rising',       label: 'Bulls Power���㏸��' },
-        { id: 'falling',      label: 'Bulls Power�����~��' }
+        { id: 'above_zero',   label: 'Bulls Powerがゼロより上' },
+        { id: 'below_zero',   label: 'Bulls Powerがゼロより下' },
+        { id: 'rising',       label: 'Bulls Powerが上昇中' },
+        { id: 'falling',      label: 'Bulls Powerが下降中' }
       ];
     case 'pivot':
       return [
-        { id: 'price_above_r1',  label: '���i��R1����' },
-        { id: 'price_below_s1',  label: '���i��S1��艺' },
-        { id: 'price_above_r2',  label: '���i��R2����' },
-        { id: 'price_below_s2',  label: '���i��S2��艺' },
-        { id: 'price_above_r3',  label: '���i��R3����' },
-        { id: 'price_below_s3',  label: '���i��S3��艺' },
-        { id: 'price_above_pp',  label: '���i��PP����' },
-        { id: 'price_below_pp',  label: '���i��PP��艺' },
-        { id: 'cross_up_pp',     label: '���i��PP��㔲��' },
-        { id: 'cross_down_pp',   label: '���i��PP�������' },
-        { id: 'cross_up_r1',     label: '���i��R1��㔲��' },
-        { id: 'cross_down_s1',   label: '���i��S1�������' }
+        { id: 'price_above_r1',  label: '価格がR1より上' },
+        { id: 'price_below_s1',  label: '価格がS1より下' },
+        { id: 'price_above_r2',  label: '価格がR2より上' },
+        { id: 'price_below_s2',  label: '価格がS2より下' },
+        { id: 'price_above_r3',  label: '価格がR3より上' },
+        { id: 'price_below_s3',  label: '価格がS3より下' },
+        { id: 'price_above_pp',  label: '価格がPPより上' },
+        { id: 'price_below_pp',  label: '価格がPPより下' },
+        { id: 'cross_up_pp',     label: '価格がPPを上抜け' },
+        { id: 'cross_down_pp',   label: '価格がPPを下抜け' },
+        { id: 'cross_up_r1',     label: '価格がR1を上抜け' },
+        { id: 'cross_down_s1',   label: '価格がS1を下抜け' }
       ];
     case 'fibonacci':
       return [
-        { id: 'price_above_236', label: '���i��23.6%���C������' },
-        { id: 'price_below_236', label: '���i��23.6%���C����艺' },
-        { id: 'price_above_382', label: '���i��38.2%���C������' },
-        { id: 'price_below_382', label: '���i��38.2%���C����艺' },
-        { id: 'price_above_500', label: '���i��50.0%���C������' },
-        { id: 'price_below_500', label: '���i��50.0%���C����艺' },
-        { id: 'price_above_618', label: '���i��61.8%���C������' },
-        { id: 'price_below_618', label: '���i��61.8%���C����艺' },
-        { id: 'price_above_786', label: '���i��78.6%���C������' },
-        { id: 'price_below_786', label: '���i��78.6%���C����艺' },
-        { id: 'cross_up_382',    label: '���i��38.2%��㔲��' },
-        { id: 'cross_down_382',  label: '���i��38.2%�������' },
-        { id: 'cross_up_618',    label: '���i��61.8%��㔲��' },
-        { id: 'cross_down_618',  label: '���i��61.8%�������' }
-      ];
-    case 'ma_cross':
-      return [
-        { id: 'golden_cross', label: '�S�[���f���N���X(�Z����������㔲��)' },
-        { id: 'dead_cross',   label: '�f�b�h�N���X(�Z���������������)' }
-      ];
-    case 'ma_perfect':
-      return [
-        { id: 'bullish_order', label: '���C�̃p�[�t�F�N�g�I�[�_�[(�Z��>����>����)' },
-        { id: 'bearish_order', label: '��C�̃p�[�t�F�N�g�I�[�_�[(�Z��<����<����)' }
-      ];
-    case 'ma_deviation':
-      return [
-        { id: 'above_limit', label: '�w��pips�ȏ�̏������' },
-        { id: 'below_limit', label: '�w��pips�ȏ�̉�������' }
-      ];
-    case 'heiken_ashi':
-      return [
-        { id: 'is_bullish',  label: '���ϑ����z��' },
-        { id: 'is_bearish',  label: '���ϑ����A��' },
-        { id: 'turn_up',     label: '�A������z���ɓ]��' },
-        { id: 'turn_down',   label: '�z������A���ɓ]��' }
-      ];
-    case 'round_numbers':
-      return [
-        { id: 'price_above',  label: '���i���L���o������' },
-        { id: 'price_below',  label: '���i���L���o����艺' },
-        { id: 'cross_up',     label: '���i���L���o����㔲��' },
-        { id: 'cross_down',   label: '���i���L���o���������' }
+        { id: 'price_above_236', label: '価格が23.6%ラインより上' },
+        { id: 'price_below_236', label: '価格が23.6%ラインより下' },
+        { id: 'price_above_382', label: '価格が38.2%ラインより上' },
+        { id: 'price_below_382', label: '価格が38.2%ラインより下' },
+        { id: 'price_above_500', label: '価格が50.0%ラインより上' },
+        { id: 'price_below_500', label: '価格が50.0%ラインより下' },
+        { id: 'price_above_618', label: '価格が61.8%ラインより上' },
+        { id: 'price_below_618', label: '価格が61.8%ラインより下' },
+        { id: 'price_above_786', label: '価格が78.6%ラインより上' },
+        { id: 'price_below_786', label: '価格が78.6%ラインより下' },
+        { id: 'cross_up_382',    label: '価格が38.2%を上抜け' },
+        { id: 'cross_down_382',  label: '価格が38.2%を下抜け' },
+        { id: 'cross_up_618',    label: '価格が61.8%を上抜け' },
+        { id: 'cross_down_618',  label: '価格が61.8%を下抜け' }
       ];
     default:
       return [];
@@ -2153,33 +2256,33 @@ function getCandleConditions(indicator) {
   switch (indicator) {
     case 'body_size':
       return [
-        { id: 'above_pips', label: '���̂�Npips�ȏ�' },
-        { id: 'below_pips', label: '���̂�Npips�ȉ�' }
+        { id: 'above_pips', label: '実体がNpips以上' },
+        { id: 'below_pips', label: '実体がNpips以下' }
       ];
     case 'upper_wick':
       return [
-        { id: 'above_pips', label: '��q�Q��Npips�ȏ�' },
-        { id: 'below_pips', label: '��q�Q��Npips�ȉ�' }
+        { id: 'above_pips', label: '上ヒゲがNpips以上' },
+        { id: 'below_pips', label: '上ヒゲがNpips以下' }
       ];
     case 'lower_wick':
       return [
-        { id: 'above_pips', label: '���q�Q��Npips�ȏ�' },
-        { id: 'below_pips', label: '���q�Q��Npips�ȉ�' }
+        { id: 'above_pips', label: '下ヒゲがNpips以上' },
+        { id: 'below_pips', label: '下ヒゲがNpips以下' }
       ];
     case 'bullish':
-      return [{ id: 'is_true', label: '�z���ł���' }];
+      return [{ id: 'is_true', label: '陽線である' }];
     case 'bearish':
-      return [{ id: 'is_true', label: '�A���ł���' }];
+      return [{ id: 'is_true', label: '陰線である' }];
     case 'doji':
-      return [{ id: 'is_true', label: '�������ł���' }];
+      return [{ id: 'is_true', label: '同時線である' }];
     case 'engulfing_bull':
-      return [{ id: 'is_true', label: '�z����ݑ����o��' }];
+      return [{ id: 'is_true', label: '陽線包み足が出現' }];
     case 'engulfing_bear':
-      return [{ id: 'is_true', label: '�A����ݑ����o��' }];
+      return [{ id: 'is_true', label: '陰線包み足が出現' }];
     case 'pinbar_bull':
-      return [{ id: 'is_true', label: '���C�s���o�[���o��' }];
+      return [{ id: 'is_true', label: '強気ピンバーが出現' }];
     case 'pinbar_bear':
-      return [{ id: 'is_true', label: '��C�s���o�[���o��' }];
+      return [{ id: 'is_true', label: '弱気ピンバーが出現' }];
     default:
       return [];
   }
@@ -2189,23 +2292,23 @@ function getPriceConditions(indicator) {
   switch (indicator) {
     case 'price_above':
       return [
-        { id: 'fixed_price', label: '�Œ艿�i' },
-        { id: 'indicator',   label: '�C���W�P�[�^�[�l' }
+        { id: 'fixed_price', label: '固定価格' },
+        { id: 'indicator',   label: 'インジケーター値' }
       ];
     case 'price_below':
       return [
-        { id: 'fixed_price', label: '�Œ艿�i' },
-        { id: 'indicator',   label: '�C���W�P�[�^�[�l' }
+        { id: 'fixed_price', label: '固定価格' },
+        { id: 'indicator',   label: 'インジケーター値' }
       ];
     case 'price_cross_up':
       return [
-        { id: 'fixed_price', label: '�Œ艿�i' },
-        { id: 'indicator',   label: '�C���W�P�[�^�[�l' }
+        { id: 'fixed_price', label: '固定価格' },
+        { id: 'indicator',   label: 'インジケーター値' }
       ];
     case 'price_cross_dn':
       return [
-        { id: 'fixed_price', label: '�Œ艿�i' },
-        { id: 'indicator',   label: '�C���W�P�[�^�[�l' }
+        { id: 'fixed_price', label: '固定価格' },
+        { id: 'indicator',   label: 'インジケーター値' }
       ];
     default:
       return [];
@@ -2259,22 +2362,22 @@ function renderWizardStep4() {
   const tfGroup = document.createElement('div');
   tfGroup.className = 'wizard-param-group';
   const tfLabel = document.createElement('label');
-  tfLabel.textContent = '���f���ԑ�';
+  tfLabel.textContent = '判断時間足';
   tfGroup.appendChild(tfLabel);
   const tfSelect = document.createElement('select');
   tfSelect.className = 'wizard-param-select';
   tfSelect.dataset.paramId = 'condTimeframe';
   const tfOptions = [
-    { value: '0',           label: '���݂̃`���[�g' },
-    { value: 'PERIOD_M1',   label: 'M1 (1����)' },
-    { value: 'PERIOD_M5',   label: 'M5 (5����)' },
-    { value: 'PERIOD_M15',  label: 'M15 (15����)' },
-    { value: 'PERIOD_M30',  label: 'M30 (30����)' },
-    { value: 'PERIOD_H1',   label: 'H1 (1���ԑ�)' },
-    { value: 'PERIOD_H4',   label: 'H4 (4���ԑ�)' },
-    { value: 'PERIOD_D1',   label: 'D1 (����)' },
-    { value: 'PERIOD_W1',   label: 'W1 (�T��)' },
-    { value: 'PERIOD_MN1',  label: 'MN1 (����)' }
+    { value: '0',           label: '現在のチャート' },
+    { value: 'PERIOD_M1',   label: 'M1 (1分足)' },
+    { value: 'PERIOD_M5',   label: 'M5 (5分足)' },
+    { value: 'PERIOD_M15',  label: 'M15 (15分足)' },
+    { value: 'PERIOD_M30',  label: 'M30 (30分足)' },
+    { value: 'PERIOD_H1',   label: 'H1 (1時間足)' },
+    { value: 'PERIOD_H4',   label: 'H4 (4時間足)' },
+    { value: 'PERIOD_D1',   label: 'D1 (日足)' },
+    { value: 'PERIOD_W1',   label: 'W1 (週足)' },
+    { value: 'PERIOD_MN1',  label: 'MN1 (月足)' }
   ];
   tfOptions.forEach(opt => {
     const option = document.createElement('option');
@@ -2290,7 +2393,7 @@ function renderWizardStep4() {
   const cbGroup = document.createElement('div');
   cbGroup.className = 'wizard-param-group';
   const cbLabel = document.createElement('label');
-  cbLabel.textContent = '�m��҂��{�� (0=�������ł�������)';
+  cbLabel.textContent = '確定待ち本数 (0=発生足ですぐ判定)';
   cbGroup.appendChild(cbLabel);
   const cbInput = document.createElement('input');
   cbInput.type = 'number';
@@ -2307,7 +2410,7 @@ function renderWizardStep4() {
   shiftGroup.className = 'wizard-param-group';
   shiftGroup.id = 'wizard-shift-group';
   const shiftLabel = document.createElement('label');
-  shiftLabel.textContent = '�V�t�g (���{�O�̑� �� ���莞�ԑ����u���݂̃`���[�g�v���̂ݗL��)';
+  shiftLabel.textContent = 'シフト (何本前の足 ※ 判定時間足が「現在のチャート」時のみ有効)';
   shiftGroup.appendChild(shiftLabel);
   const shiftInput = document.createElement('input');
   shiftInput.type = 'number';
@@ -2334,17 +2437,17 @@ function getRequiredParams(category, indicator, conditionType) {
   if (category === 'indicator') {
     switch (indicator) {
       case 'ma':
-        params.push({ id: 'ma_period_short', label: '�Z��MA����', type: 'number', default: 20, min: 1 });
-        params.push({ id: 'ma_period_long', label: '����MA����', type: 'number', default: 50, min: 1 });
+        params.push({ id: 'ma_period_short', label: '短期MA期間', type: 'number', default: 20, min: 1 });
+        params.push({ id: 'ma_period_long', label: '長期MA期間', type: 'number', default: 50, min: 1 });
         params.push({
-          id: 'ma_method', label: 'MA���', type: 'select', default: '0',
+          id: 'ma_method', label: 'MA種別', type: 'select', default: '0',
           options: [
             { value: '0', label: 'SMA' }, { value: '1', label: 'EMA' },
             { value: '2', label: 'SMMA' }, { value: '3', label: 'LWMA' }
           ]
         });
         params.push({
-          id: 'ma_apply', label: '�K�p���i', type: 'select', default: '0',
+          id: 'ma_apply', label: '適用価格', type: 'select', default: '0',
           options: [
             { value: '0', label: 'Close' }, { value: '1', label: 'Open' },
             { value: '2', label: 'High' }, { value: '3', label: 'Low' },
@@ -2354,15 +2457,15 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'heiken_ashi':
-        params.push({ id: 'ha_dummy', label: '���ϑ��ݒ�', type: 'select', default: '0', 
-          options: [{ value: '0', label: '�W�� (iCustom)' }] 
+        params.push({ id: 'ha_dummy', label: '平均足設定', type: 'select', default: '0', 
+          options: [{ value: '0', label: '標準 (iCustom)' }] 
         });
         break;
       case 'ma_cross':
-        params.push({ id: 'ma_fast_period', label: '�Z������', type: 'number', default: 5 });
-        params.push({ id: 'ma_slow_period', label: '��������', type: 'number', default: 20 });
+        params.push({ id: 'ma_fast_period', label: '短期期間', type: 'number', default: 5 });
+        params.push({ id: 'ma_slow_period', label: '長期期間', type: 'number', default: 20 });
         params.push({
-          id: 'ma_method', label: 'MA���', type: 'select', default: '0',
+          id: 'ma_method', label: 'MA種別', type: 'select', default: '0',
           options: [
             { value: '0', label: 'SMA' }, { value: '1', label: 'EMA' },
             { value: '2', label: 'SMMA' }, { value: '3', label: 'LWMA' }
@@ -2370,11 +2473,11 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'ma_perfect':
-        params.push({ id: 'ma_short_period', label: '�Z������', type: 'number', default: 10 });
-        params.push({ id: 'ma_mid_period',   label: '��������', type: 'number', default: 25 });
-        params.push({ id: 'ma_long_period',  label: '��������', type: 'number', default: 50 });
+        params.push({ id: 'ma_short_period', label: '短期期間', type: 'number', default: 10 });
+        params.push({ id: 'ma_mid_period',   label: '中期期間', type: 'number', default: 25 });
+        params.push({ id: 'ma_long_period',  label: '長期期間', type: 'number', default: 50 });
         params.push({
-          id: 'ma_method', label: 'MA���', type: 'select', default: '0',
+          id: 'ma_method', label: 'MA種別', type: 'select', default: '0',
           options: [
             { value: '0', label: 'SMA' }, { value: '1', label: 'EMA' },
             { value: '2', label: 'SMMA' }, { value: '3', label: 'LWMA' }
@@ -2382,10 +2485,10 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'ma_deviation':
-        params.push({ id: 'ma_period', label: 'MA����', type: 'number', default: 20 });
-        params.push({ id: 'deviation_pips', label: '����pips', type: 'number', default: 30 });
+        params.push({ id: 'ma_period', label: 'MA期間', type: 'number', default: 20 });
+        params.push({ id: 'deviation_pips', label: '乖離pips', type: 'number', default: 30 });
         params.push({
-          id: 'ma_method', label: 'MA���', type: 'select', default: '0',
+          id: 'ma_method', label: 'MA種別', type: 'select', default: '0',
           options: [
             { value: '0', label: 'SMA' }, { value: '1', label: 'EMA' },
             { value: '2', label: 'SMMA' }, { value: '3', label: 'LWMA' }
@@ -2393,9 +2496,9 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'round_numbers':
-        params.push({ id: 'round_dist', label: '�ڋ�pips', type: 'number', default: 5 });
+        params.push({ id: 'round_dist', label: '接近pips', type: 'number', default: 5 });
         params.push({
-          id: 'round_step', label: '�ߖڊԊu', type: 'select', default: '100',
+          id: 'round_step', label: '節目間隔', type: 'select', default: '100',
           options: [
             { value: '100', label: '100 pips (.00)' },
             { value: '50',  label: '50 pips (.50)' },
@@ -2403,11 +2506,22 @@ function getRequiredParams(category, indicator, conditionType) {
           ]
         });
         break;
-      case 'envelope':
-        params.push({ id: 'env_period', label: '����', type: 'number', default: 20, min: 1 });
-        params.push({ id: 'env_deviation', label: '�΍�(%)', type: 'number', default: 0.1, step: '0.01', min: 0 });
+      case 'holiday_filter':
         params.push({
-          id: 'env_method', label: 'MA���', type: 'select', default: '0',
+          id: 'holiday_country', label: '対象国', type: 'select', default: 'JP,US',
+          options: [
+            { value: 'JP,US', label: '日本・米国' },
+            { value: 'JP',    label: '日本のみ' },
+            { value: 'US',    label: '米国のみ' },
+            { value: 'ALL',   label: '主要全ヶ国' }
+          ]
+        });
+        break;
+      case 'envelope':
+        params.push({ id: 'env_period', label: '期間', type: 'number', default: 20, min: 1 });
+        params.push({ id: 'env_deviation', label: '偏差(%)', type: 'number', default: 0.1, step: '0.01', min: 0 });
+        params.push({
+          id: 'env_method', label: 'MA種別', type: 'select', default: '0',
           options: [
             { value: '0', label: 'SMA' }, { value: '1', label: 'EMA' },
             { value: '2', label: 'SMMA' }, { value: '3', label: 'LWMA' }
@@ -2415,111 +2529,111 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'parabolic':
-        params.push({ id: 'sar_step', label: '�X�e�b�v', type: 'number', default: 0.02, step: '0.01', min: 0.001 });
-        params.push({ id: 'sar_max', label: '�ő�l', type: 'number', default: 0.2, step: '0.01', min: 0.01 });
+        params.push({ id: 'sar_step', label: 'ステップ', type: 'number', default: 0.02, step: '0.01', min: 0.001 });
+        params.push({ id: 'sar_max', label: '最大値', type: 'number', default: 0.2, step: '0.01', min: 0.01 });
         break;
       case 'bollinger':
-        params.push({ id: 'bb_period', label: '����', type: 'number', default: 20, min: 1 });
-        params.push({ id: 'bb_deviation', label: '�΍�', type: 'number', default: 2.0, step: '0.1', min: 0.1 });
+        params.push({ id: 'bb_period', label: '期間', type: 'number', default: 20, min: 1 });
+        params.push({ id: 'bb_deviation', label: '偏差', type: 'number', default: 2.0, step: '0.1', min: 0.1 });
         if (conditionType === 'squeeze' || conditionType === 'expansion') {
-          params.push({ id: 'bb_bw_threshold', label: '�o���h��臒l(pips)', type: 'number', default: 10, min: 0 });
+          params.push({ id: 'bb_bw_threshold', label: 'バンド幅閾値(pips)', type: 'number', default: 10, min: 0 });
         }
         break;
       case 'rsi':
-        params.push({ id: 'rsi_period', label: '����', type: 'number', default: 14, min: 1 });
-        params.push({ id: 'rsi_level', label: '���x��', type: 'number', default: 70, min: 0, max: 100 });
+        params.push({ id: 'rsi_period', label: '期間', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'rsi_level', label: 'レベル', type: 'number', default: 70, min: 0, max: 100 });
         break;
       case 'macd':
-        params.push({ id: 'macd_fast', label: '�Z��EMA', type: 'number', default: 12, min: 1 });
-        params.push({ id: 'macd_slow', label: '����EMA', type: 'number', default: 26, min: 1 });
-        params.push({ id: 'macd_signal', label: '�V�O�i������', type: 'number', default: 9, min: 1 });
+        params.push({ id: 'macd_fast', label: '短期EMA', type: 'number', default: 12, min: 1 });
+        params.push({ id: 'macd_slow', label: '長期EMA', type: 'number', default: 26, min: 1 });
+        params.push({ id: 'macd_signal', label: 'シグナル期間', type: 'number', default: 9, min: 1 });
         break;
       case 'stochastic':
-        params.push({ id: 'stoch_k', label: '%K����', type: 'number', default: 5, min: 1 });
-        params.push({ id: 'stoch_d', label: '%D����', type: 'number', default: 3, min: 1 });
-        params.push({ id: 'stoch_slowing', label: '�X���[�C���O', type: 'number', default: 3, min: 1 });
+        params.push({ id: 'stoch_k', label: '%K期間', type: 'number', default: 5, min: 1 });
+        params.push({ id: 'stoch_d', label: '%D期間', type: 'number', default: 3, min: 1 });
+        params.push({ id: 'stoch_slowing', label: 'スローイング', type: 'number', default: 3, min: 1 });
         if (conditionType === 'above_level' || conditionType === 'below_level') {
-          params.push({ id: 'stoch_level', label: '���x��', type: 'number', default: 80, min: 0, max: 100 });
+          params.push({ id: 'stoch_level', label: 'レベル', type: 'number', default: 80, min: 0, max: 100 });
         }
         break;
       case 'cci':
-        params.push({ id: 'cci_period', label: '����', type: 'number', default: 14, min: 1 });
-        params.push({ id: 'cci_level', label: '���x��', type: 'number', default: 100 });
+        params.push({ id: 'cci_period', label: '期間', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'cci_level', label: 'レベル', type: 'number', default: 100 });
         break;
       case 'adx':
-        params.push({ id: 'adx_period', label: '����', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'adx_period', label: '期間', type: 'number', default: 14, min: 1 });
         if (conditionType === 'above_level' || conditionType === 'below_level') {
-          params.push({ id: 'adx_level', label: '���x��', type: 'number', default: 25, min: 0 });
+          params.push({ id: 'adx_level', label: 'レベル', type: 'number', default: 25, min: 0 });
         }
         break;
       case 'atr':
-        params.push({ id: 'atr_period', label: '����', type: 'number', default: 14, min: 1 });
-        params.push({ id: 'atr_level', label: '臒l', type: 'number', default: 0.001, step: '0.0001', min: 0 });
+        params.push({ id: 'atr_period', label: '期間', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'atr_level', label: '閾値', type: 'number', default: 0.001, step: '0.0001', min: 0 });
         break;
       case 'ichimoku':
-        params.push({ id: 'ichi_tenkan', label: '�]��������', type: 'number', default: 9, min: 1 });
-        params.push({ id: 'ichi_kijun', label: '�������', type: 'number', default: 26, min: 1 });
-        params.push({ id: 'ichi_senkou', label: '��s�X�p��B����', type: 'number', default: 52, min: 1 });
+        params.push({ id: 'ichi_tenkan', label: '転換線期間', type: 'number', default: 9, min: 1 });
+        params.push({ id: 'ichi_kijun', label: '基準線期間', type: 'number', default: 26, min: 1 });
+        params.push({ id: 'ichi_senkou', label: '先行スパンB期間', type: 'number', default: 52, min: 1 });
         break;
       case 'williams':
-        params.push({ id: 'wpr_period', label: '����', type: 'number', default: 14, min: 1 });
-        params.push({ id: 'wpr_level', label: '���x��', type: 'number', default: -20 });
+        params.push({ id: 'wpr_period', label: '期間', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'wpr_level', label: 'レベル', type: 'number', default: -20 });
         break;
       case 'demarker':
-        params.push({ id: 'dem_period', label: '����', type: 'number', default: 14, min: 1 });
-        params.push({ id: 'dem_level', label: '���x��', type: 'number', default: 0.7, step: '0.1', min: 0, max: 1 });
+        params.push({ id: 'dem_period', label: '期間', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'dem_level', label: 'レベル', type: 'number', default: 0.7, step: '0.1', min: 0, max: 1 });
         break;
       case 'momentum':
-        params.push({ id: 'mom_period', label: '����', type: 'number', default: 14, min: 1 });
+        params.push({ id: 'mom_period', label: '期間', type: 'number', default: 14, min: 1 });
         break;
       case 'osma':
-        params.push({ id: 'osma_fast', label: '�Z��EMA', type: 'number', default: 12, min: 1 });
-        params.push({ id: 'osma_slow', label: '����EMA', type: 'number', default: 26, min: 1 });
-        params.push({ id: 'osma_signal', label: '�V�O�i������', type: 'number', default: 9, min: 1 });
+        params.push({ id: 'osma_fast', label: '短期EMA', type: 'number', default: 12, min: 1 });
+        params.push({ id: 'osma_slow', label: '長期EMA', type: 'number', default: 26, min: 1 });
+        params.push({ id: 'osma_signal', label: 'シグナル期間', type: 'number', default: 9, min: 1 });
         break;
       case 'ao': break;
       case 'ac': break;
       case 'rvi':
-        params.push({ id: 'rvi_period', label: '����', type: 'number', default: 10, min: 1 });
+        params.push({ id: 'rvi_period', label: '期間', type: 'number', default: 10, min: 1 });
         break;
       case 'bears':
-        params.push({ id: 'bears_period', label: '����', type: 'number', default: 13, min: 1 });
+        params.push({ id: 'bears_period', label: '期間', type: 'number', default: 13, min: 1 });
         break;
       case 'bulls':
-        params.push({ id: 'bulls_period', label: '����', type: 'number', default: 13, min: 1 });
+        params.push({ id: 'bulls_period', label: '期間', type: 'number', default: 13, min: 1 });
         break;
       case 'pivot':
         params.push({
-          id: 'pivot_type', label: '�s�{�b�g���', type: 'select', default: 'classic',
+          id: 'pivot_type', label: 'ピボット種別', type: 'select', default: 'classic',
           options: [
-            { value: 'classic', label: '�N���V�b�N' }, { value: 'fibonacci', label: '�t�B�{�i�b�`' },
-            { value: 'camarilla', label: '�J�}����' }, { value: 'woodie', label: '�E�b�f�B' }
+            { value: 'classic', label: 'クラシック' }, { value: 'fibonacci', label: 'フィボナッチ' },
+            { value: 'camarilla', label: 'カマリラ' }, { value: 'woodie', label: 'ウッディ' }
           ]
         });
         params.push({
-          id: 'pivot_timeframe', label: '�Z�o���ԑ�', type: 'select', default: 'PERIOD_D1',
+          id: 'pivot_timeframe', label: '算出時間足', type: 'select', default: 'PERIOD_D1',
           options: [
-            { value: 'PERIOD_H1', label: '1���ԑ�' }, { value: 'PERIOD_H4', label: '4���ԑ�' },
-            { value: 'PERIOD_D1', label: '����' }, { value: 'PERIOD_W1', label: '�T��' }
+            { value: 'PERIOD_H1', label: '1時間足' }, { value: 'PERIOD_H4', label: '4時間足' },
+            { value: 'PERIOD_D1', label: '日足' }, { value: 'PERIOD_W1', label: '週足' }
           ]
         });
         break;
       case 'fibonacci':
         params.push({
-          id: 'fib_mode', label: '�t�B�{�i�b�`�Z�o���@', type: 'select', default: 'highlow',
+          id: 'fib_mode', label: 'フィボナッチ算出方法', type: 'select', default: 'highlow',
           options: [
-            { value: 'highlow', label: '����N�{�̍ō��l�E�ň��l' },
-            { value: 'swing', label: '���߃X�C���O�n�C�E�X�C���t���[' }
+            { value: 'highlow', label: '直近N本の最高値・最安値' },
+            { value: 'swing', label: '直近スイングハイ・スインフロー' }
           ]
         });
-        params.push({ id: 'fib_period', label: '�Z�o����(�{��)', type: 'number', default: 50, min: 5 });
-        params.push({ id: 'fib_swing_strength', label: '�X�C���O����{��(���EN�{)', type: 'number', default: 5, min: 2, max: 50 });
+        params.push({ id: 'fib_period', label: '算出期間(本数)', type: 'number', default: 50, min: 5 });
+        params.push({ id: 'fib_swing_strength', label: 'スイング判定本数(左右N本)', type: 'number', default: 5, min: 2, max: 50 });
         params.push({
-          id: 'fib_timeframe', label: '�Z�o���ԑ�', type: 'select', default: 'PERIOD_D1',
+          id: 'fib_timeframe', label: '算出時間足', type: 'select', default: 'PERIOD_D1',
           options: [
-            { value: '0', label: '���݂̎��ԑ�' }, { value: 'PERIOD_H1', label: '1���ԑ�' },
-            { value: 'PERIOD_H4', label: '4���ԑ�' }, { value: 'PERIOD_D1', label: '����' },
-            { value: 'PERIOD_W1', label: '�T��' }
+            { value: '0', label: '現在の時間足' }, { value: 'PERIOD_H1', label: '1時間足' },
+            { value: 'PERIOD_H4', label: '4時間足' }, { value: 'PERIOD_D1', label: '日足' },
+            { value: 'PERIOD_W1', label: '週足' }
           ]
         });
         break;
@@ -2530,17 +2644,17 @@ function getRequiredParams(category, indicator, conditionType) {
     }
   } else if (category === 'price') {
     if (conditionType === 'fixed_price') {
-      params.push({ id: 'price_value', label: '���i', type: 'number', default: 0, step: '0.00001' });
+      params.push({ id: 'price_value', label: '価格', type: 'number', default: 0, step: '0.00001' });
     } else if (conditionType === 'indicator') {
       params.push({
-        id: 'price_indi', label: '��r�C���W�P�[�^�[', type: 'select', default: 'ma',
+        id: 'price_indi', label: '比較インジケーター', type: 'select', default: 'ma',
         options: [
-          { value: 'ma', label: '�ړ����ϐ�' }, { value: 'bollinger', label: '�{�����W���[�o���h(����)' },
-          { value: 'envelope_upper', label: '�G���x���[�v(��)' }, { value: 'envelope_lower', label: '�G���x���[�v(��)' },
-          { value: 'parabolic', label: '�p���{���b�NSAR' }
+          { value: 'ma', label: '移動平均線' }, { value: 'bollinger', label: 'ボリンジャーバンド(中央)' },
+          { value: 'envelope_upper', label: 'エンベロープ(上)' }, { value: 'envelope_lower', label: 'エンベロープ(下)' },
+          { value: 'parabolic', label: 'パラボリックSAR' }
         ]
       });
-      params.push({ id: 'price_indi_period', label: '����', type: 'number', default: 20, min: 1 });
+      params.push({ id: 'price_indi_period', label: '期間', type: 'number', default: 20, min: 1 });
     }
   }
 
@@ -2575,19 +2689,19 @@ function renderWizardStep5() {
   const summary = document.createElement('div');
   summary.className = 'wizard-summary';
 
-  const targetLabel = wizardState.targetType === 'buy' ? 'Buy���'
-    : wizardState.targetType === 'sell' ? 'Sell���'
-    : '�G�O�W�b�g���';
+  const targetLabel = wizardState.targetType === 'buy' ? 'Buy条件'
+    : wizardState.targetType === 'sell' ? 'Sell条件'
+    : 'エグジット条件';
 
   const tfLabel = getTfLabel(condTf);
 
   summary.innerHTML = `
-    <h4>${targetLabel} �m�F</h4>
-    <p><strong>�J�e�S���[:</strong> ${wizardState.category === 'indicator' ? '�C���W�P�[�^�[' : wizardState.category === 'candle' ? '���[�\�N��' : '���i�A�N�V����'}</p>
-    <p><strong>�ڍ�:</strong> ${wizardState.detail}</p>
-    <p><strong>���:</strong> ${wizardState.conditionType}</p>
-    <p><strong>���f���ԑ�:</strong> ${tfLabel}</p>
-    ${condTf !== '0' ? '<p><strong>�m��҂�:</strong> ' + confirmBars + '�{ (�����V�t�g: ' + wizardState.shift + ')</p>' : '<p><strong>�V�t�g:</strong> ' + wizardState.shift + '</p>'}
+    <h4>${targetLabel} 確認</h4>
+    <p><strong>カテゴリー:</strong> ${wizardState.category === 'indicator' ? 'インジケーター' : wizardState.category === 'candle' ? 'ローソク足' : '価格アクション'}</p>
+    <p><strong>詳細:</strong> ${wizardState.detail}</p>
+    <p><strong>条件:</strong> ${wizardState.conditionType}</p>
+    <p><strong>判断時間足:</strong> ${tfLabel}</p>
+    ${condTf !== '0' ? '<p><strong>確定待ち:</strong> ' + confirmBars + '本 (実効シフト: ' + wizardState.shift + ')</p>' : '<p><strong>シフト:</strong> ' + wizardState.shift + '</p>'}
   `;
 
   const paramList = document.createElement('div');
@@ -2675,7 +2789,7 @@ function createParamSelect(name, label, options) {
 
 function getTfLabel(tf) {
   const map = {
-    '0': '���݂̃`���[�g', 'PERIOD_M1': 'M1', 'PERIOD_M5': 'M5',
+    '0': '現在のチャート', 'PERIOD_M1': 'M1', 'PERIOD_M5': 'M5',
     'PERIOD_M15': 'M15', 'PERIOD_M30': 'M30', 'PERIOD_H1': 'H1',
     'PERIOD_H4': 'H4', 'PERIOD_D1': 'D1', 'PERIOD_W1': 'W1', 'PERIOD_MN1': 'MN1'
   };
@@ -2718,7 +2832,7 @@ function updateConditionList(type) {
   listEl.innerHTML = '';
 
   if (conditions.length === 0) {
-    listEl.innerHTML = '<p class="empty-list">������ݒ肳��Ă��܂���</p>';
+    listEl.innerHTML = '<p class="empty-list">条件が設定されていません</p>';
     return;
   }
 
@@ -2745,7 +2859,7 @@ function updateConditionList(type) {
     item.appendChild(label);
 
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = '�폜';
+    deleteBtn.textContent = '削除';
     deleteBtn.style.background = 'none';
     deleteBtn.style.border = 'none';
     deleteBtn.style.color = '#e74c3c';
@@ -2784,7 +2898,7 @@ function updateExitConditionList() {
   listEl.innerHTML = '';
 
   if (eaState.exitConditions.length === 0) {
-    listEl.innerHTML = '<p class="empty-list">���Ϗ���͂܂��ǉ�����Ă��܂���</p>';
+    listEl.innerHTML = '<p class="empty-list">決済条件はまだ追加されていません</p>';
     return;
   }
 
@@ -2794,13 +2908,13 @@ function updateExitConditionList() {
 
     const info = document.createElement('span');
     info.className = 'condition-info';
-    const tfStr = cond.condTimeframe && cond.condTimeframe !== '0' ? ' [' + getTfLabel(cond.condTimeframe) + ' +' + (cond.confirmBars || 0) + '�{]' : '';
+    const tfStr = cond.condTimeframe && cond.condTimeframe !== '0' ? ' [' + getTfLabel(cond.condTimeframe) + ' +' + (cond.confirmBars || 0) + '本]' : '';
     const tId = cond.conditionType || cond.type;
     info.textContent = `${cond.detail || getDetailName(cond.category, cond.indicator)} / ${tId} (shift: ${cond.shift})${tfStr}`;
 
     const removeBtn = document.createElement('button');
     removeBtn.className = 'condition-remove-btn';
-    removeBtn.textContent = '�폜';
+    removeBtn.textContent = '削除';
     removeBtn.addEventListener('click', () => {
       eaState.exitConditions.splice(index, 1);
       updateExitConditionList();
@@ -2998,7 +3112,7 @@ function saveWizardCondition() {
   updateConditionList('buy');
   updateConditionList('sell');
   closeWizard();
-  showToast('�����ǉ����܂���');
+  showToast('条件を追加しました');
 }
 
 // ============================================================
@@ -3010,36 +3124,36 @@ function saveWizardCondition() {
 function getDetailsForCategory(category) {
     const details = {
         indicator: [
-            { id: 'ma', icon: '??', name: '�ړ����ϐ�(MA)' },
-            { id: 'rsi', icon: '??', name: 'RSI' },
-            { id: 'macd', icon: '??', name: 'MACD' },
-            { id: 'bb', icon: '??', name: '�{�����W���[�o���h' },
-            { id: 'stochastic', icon: '??', name: '�X�g�L���X�e�B�N�X' },
-            { id: 'cci', icon: '??', name: 'CCI' },
-            { id: 'atr', icon: '??', name: 'ATR' },
-            { id: 'ichimoku', icon: '??', name: '��ڋύt�\' },
-            { id: 'parabolic', icon: '??', name: '�p���{���b�NSAR' }
+            { id: 'ma', icon: '📈', name: '移動平均線(MA)' },
+            { id: 'rsi', icon: '📉', name: 'RSI' },
+            { id: 'macd', icon: '📊', name: 'MACD' },
+            { id: 'bb', icon: '↕️', name: 'ボリンジャーバンド' },
+            { id: 'stochastic', icon: '🔄', name: 'ストキャスティクス' },
+            { id: 'cci', icon: '💹', name: 'CCI' },
+            { id: 'atr', icon: '📏', name: 'ATR' },
+            { id: 'ichimoku', icon: '☁️', name: '一目均衡表' },
+            { id: 'parabolic', icon: '📡', name: 'パラボリックSAR' }
         ],
         candle: [
-            { id: 'bullish', icon: '???', name: '�z��' },
-            { id: 'bearish', icon: '???', name: '�A��' },
-            { id: 'doji', icon: '?', name: '�\����' },
-            { id: 'hammer', icon: '??', name: '�n���}�[' },
-            { id: 'engulfing_bull', icon: '??', name: '�z����ݑ�' },
-            { id: 'engulfing_bear', icon: '??', name: '�A����ݑ�' },
-            { id: 'pin_bar_bull', icon: '??', name: '�s���o�[(���C)' },
-            { id: 'pin_bar_bear', icon: '??', name: '�s���o�[(��C)' }
+            { id: 'bullish', icon: '🕯️', name: '陽線' },
+            { id: 'bearish', icon: '🕯️', name: '陰線' },
+            { id: 'doji', icon: '➕', name: '十字線' },
+            { id: 'hammer', icon: '🔨', name: 'ハンマー' },
+            { id: 'engulfing_bull', icon: '☀️', name: '陽線包み足' },
+            { id: 'engulfing_bear', icon: '🌙', name: '陰線包み足' },
+            { id: 'pin_bar_bull', icon: '📍', name: 'ピンバー(強気)' },
+            { id: 'pin_bar_bear', icon: '📍', name: 'ピンバー(弱気)' }
         ],
         pattern: [
-            { id: 'double_top', icon: '??', name: '�_�u���g�b�v' },
-            { id: 'double_bottom', icon: '??', name: '�_�u���{�g��' },
-            { id: 'head_shoulders', icon: '??', name: '�w�b�h�A���h�V�����_�[' },
-            { id: 'triangle', icon: '??', name: '�g���C�A���O��' },
-            { id: 'channel', icon: '??', name: '�`���l��' }
+            { id: 'double_top', icon: '⛰️', name: 'ダブルトップ' },
+            { id: 'double_bottom', icon: '⛰️', name: 'ダブルボトム' },
+            { id: 'head_shoulders', icon: '👤', name: 'ヘッドアンドショルダー' },
+            { id: 'triangle', icon: '📐', name: 'トライアングル' },
+            { id: 'channel', icon: '📏', name: 'チャネル' }
         ],
         price: [
-            { id: 'level', icon: '??', name: '���i���x��' },
-            { id: 'ma_compare', icon: '??', name: 'MA��r' }
+            { id: 'level', icon: '📍', name: '価格レベル' },
+            { id: 'ma_compare', icon: '📊', name: 'MA比較' }
         ]
     };
     return details[category] || [];
@@ -3049,82 +3163,82 @@ function getConditionTypesForDetail(category, detail) {
     if (category === 'indicator') {
         switch (detail) {
             case 'ma': return [
-                { id: 'cross_up', name: '�S�[���f���N���X', desc: '�Z��MA������MA��㔲��' },
-                { id: 'cross_down', name: '�f�b�h�N���X', desc: '�Z��MA������MA�������' },
-                { id: 'price_cross_up', name: '���i�㔲��', desc: '���i��MA��㔲��' },
-                { id: 'price_cross_down', name: '���i������', desc: '���i��MA�������' },
-                { id: 'above', name: '���i��MA����', desc: '���i��MA����ɂ���܂�' },
-                { id: 'below', name: '���i��MA��艺', desc: '���i��MA��艺�ɂ���܂�' },
-                { id: 'ma_above', name: '�Z��MA>����MA', desc: '�Z��MA������MA����' },
-                { id: 'ma_below', name: '�Z��MA<����MA', desc: '�Z��MA������MA��艺' }
+                { id: 'cross_up', name: 'ゴールデンクロス', desc: '短期MAが長期MAを上抜け' },
+                { id: 'cross_down', name: 'デッドクロス', desc: '短期MAが長期MAを下抜け' },
+                { id: 'price_cross_up', name: '価格上抜け', desc: '価格がMAを上抜け' },
+                { id: 'price_cross_down', name: '価格下抜け', desc: '価格がMAを下抜け' },
+                { id: 'above', name: '価格がMAより上', desc: '価格がMAより上にあります' },
+                { id: 'below', name: '価格がMAより下', desc: '価格がMAより下にあります' },
+                { id: 'ma_above', name: '短期MA>長期MA', desc: '短期MAが長期MAより上' },
+                { id: 'ma_below', name: '短期MA<長期MA', desc: '短期MAが長期MAより下' }
             ];
             case 'rsi': return [
-                { id: 'oversold', name: '����ꂷ��', desc: 'RSI��臒l�ȉ�' },
-                { id: 'overbought', name: '����ꂷ��', desc: 'RSI��臒l�ȏ�' },
-                { id: 'cross_up', name: '�㔲��', desc: 'RSI��臒l��㔲��' },
-                { id: 'cross_down', name: '������', desc: 'RSI��臒l�������' }
+                { id: 'oversold', name: '売られすぎ', desc: 'RSIが閾値以下' },
+                { id: 'overbought', name: '買われすぎ', desc: 'RSIが閾値以上' },
+                { id: 'cross_up', name: '上抜け', desc: 'RSIが閾値を上抜け' },
+                { id: 'cross_down', name: '下抜け', desc: 'RSIが閾値を下抜け' }
             ];
             case 'macd': return [
-                { id: 'cross_up', name: '�S�[���f���N���X', desc: 'MACD���V�O�i����㔲��' },
-                { id: 'cross_down', name: '�f�b�h�N���X', desc: 'MACD���V�O�i���������' },
-                { id: 'above_zero', name: '�[�����C���ȏ�', desc: 'MACD���[������' },
-                { id: 'below_zero', name: '�[�����C���ȉ�', desc: 'MACD���[����艺' }
+                { id: 'cross_up', name: 'ゴールデンクロス', desc: 'MACDがシグナルを上抜け' },
+                { id: 'cross_down', name: 'デッドクロス', desc: 'MACDがシグナルを下抜け' },
+                { id: 'above_zero', name: 'ゼロライン以上', desc: 'MACDがゼロより上' },
+                { id: 'below_zero', name: 'ゼロライン以下', desc: 'MACDがゼロより下' }
             ];
             case 'bb': return [
-                { id: 'touch_lower', name: '���o���h�^�b�`', desc: '���i�����o���h�Ƀ^�b�`' },
-                { id: 'touch_upper', name: '��o���h�^�b�`', desc: '���i����o���h�Ƀ^�b�`' },
-                { id: 'break_lower', name: '���o���h�u���C�N', desc: '���i�����o���h�������' },
-                { id: 'break_upper', name: '��o���h�u���C�N', desc: '���i����o���h��㔲��' }
+                { id: 'touch_lower', name: '下バンドタッチ', desc: '価格が下バンドにタッチ' },
+                { id: 'touch_upper', name: '上バンドタッチ', desc: '価格が上バンドにタッチ' },
+                { id: 'break_lower', name: '下バンドブレイク', desc: '価格が下バンドを下抜け' },
+                { id: 'break_upper', name: '上バンドブレイク', desc: '価格が上バンドを上抜け' }
             ];
             case 'stochastic': return [
-                { id: 'oversold', name: '����ꂷ��', desc: '�X�g�L���X��臒l�ȉ�' },
-                { id: 'overbought', name: '����ꂷ��', desc: '�X�g�L���X��臒l�ȏ�' },
-                { id: 'above_level', name: '���x���ȏ�', desc: '%K���w�背�x���ȏ�' },
-                { id: 'below_level', name: '���x���ȉ�', desc: '%K���w�背�x���ȉ�' },
-                { id: 'cross_up', name: '�S�[���f���N���X', desc: '%K��%D��㔲��' },
-                { id: 'cross_down', name: '�f�b�h�N���X', desc: '%K��%D�������' }
+                { id: 'oversold', name: '売られすぎ', desc: 'ストキャスが閾値以下' },
+                { id: 'overbought', name: '買われすぎ', desc: 'ストキャスが閾値以上' },
+                { id: 'above_level', name: 'レベル以上', desc: '%Kが指定レベル以上' },
+                { id: 'below_level', name: 'レベル以下', desc: '%Kが指定レベル以下' },
+                { id: 'cross_up', name: 'ゴールデンクロス', desc: '%Kが%Dを上抜け' },
+                { id: 'cross_down', name: 'デッドクロス', desc: '%Kが%Dを下抜け' }
             ];
             case 'ichimoku': return [
-                { id: 'above_kumo', name: '�_�̏�', desc: '�I�l���_�i�X�p��A/B�j����' },
-                { id: 'below_kumo', name: '�_�̉�', desc: '�I�l���_�i�X�p��A/B�j��艺' },
-                { id: 'kumo_break', name: '�_����', desc: '�I�l��_��㔲��' },
-                { id: 'tenkan_kijun', name: '�]����/����N���X', desc: '�]�����������㔲��' },
-                { id: 'in_kumo', name: '�_�̒�', desc: '�I�l���_�̒��ɐi��' }
+                { id: 'above_kumo', name: '雲の上', desc: '終値が雲（スパンA/B）より上' },
+                { id: 'below_kumo', name: '雲の下', desc: '終値が雲（スパンA/B）より下' },
+                { id: 'kumo_break', name: '雲抜け', desc: '終値を雲を上抜け' },
+                { id: 'tenkan_kijun', name: '転換線/基準線クロス', desc: '転換線が基準線を上抜け' },
+                { id: 'in_kumo', name: '雲の中', desc: '終値が雲の中に進入' }
             ];
             case 'parabolic': return [
-                { id: 'sar_above', name: '���i��SAR����', desc: '���i���p���{���b�NSAR����i�㏸�g�����h�j' },
-                { id: 'sar_below', name: '���i��SAR��艺', desc: '���i���p���{���b�NSAR��艺�i�����g�����h�j' },
-                { id: 'sar_cross_up', name: 'SAR�㔲��', desc: '���i��SAR���ɓ˂�������' },
-                { id: 'sar_cross_down', name: 'SAR������', desc: '���i��SAR����ɓ˂�������' }
+                { id: 'sar_above', name: '価格がSARより上', desc: '価格がパラボリックSARより上（上昇トレンド）' },
+                { id: 'sar_below', name: '価格がSARより下', desc: '価格がパラボリックSARより下（下落トレンド）' },
+                { id: 'sar_cross_up', name: 'SAR上抜け', desc: '価格がSARを上に突き抜けた' },
+                { id: 'sar_cross_down', name: 'SAR下抜け', desc: '価格がSARを下に突き抜けた' }
             ];
             case 'cci': return [
-                { id: 'oversold', name: '����ꂷ��', desc: 'CCI������ꂷ�����x���ȉ�' },
-                { id: 'overbought', name: '����ꂷ��', desc: 'CCI������ꂷ�����x���ȏ�' },
-                { id: 'cross_up', name: '�㔲��', desc: 'CCI��臒l��㔲��' },
-                { id: 'cross_down', name: '������', desc: 'CCI��臒l�������' }
+                { id: 'oversold', name: '売られすぎ', desc: 'CCIが売られすぎレベル以下' },
+                { id: 'overbought', name: '買われすぎ', desc: 'CCIが買われすぎレベル以上' },
+                { id: 'cross_up', name: '上抜け', desc: 'CCIが閾値を上抜け' },
+                { id: 'cross_down', name: '下抜け', desc: 'CCIが閾値を下抜け' }
             ];
             case 'atr': return [
-                { id: 'above', name: '臒l�ȏ�', desc: 'ATR��臒l�ȏ�' },
-                { id: 'below', name: '臒l�ȉ�', desc: 'ATR��臒l�ȉ�' }
+                { id: 'above', name: '閾値以上', desc: 'ATRが閾値以上' },
+                { id: 'below', name: '閾値以下', desc: 'ATRが閾値以下' }
             ];
         }
     } else if (category === 'candle') {
-        return [{ id: 'appear', name: '�o��', desc: '�p�^�[�����o��������' }];
+        return [{ id: 'appear', name: '出現', desc: 'パターンが出現した時' }];
     } else if (category === 'pattern') {
-        return [{ id: 'complete', name: '����', desc: '�p�^�[��������������' }];
+        return [{ id: 'complete', name: '完成', desc: 'パターンが完成した時' }];
     } else if (category === 'price') {
         if (detail === 'level') return [
-            { id: 'above_level', name: '�ȏ�', desc: '���i�����x���ȏ�' },
-            { id: 'below_level', name: '�ȉ�', desc: '���i�����x���ȉ�' },
-            { id: 'cross_up_level', name: '�㔲��', desc: '���i�����x����㔲��' },
-            { id: 'cross_down_level', name: '������', desc: '���i�����x���������' }
+            { id: 'above_level', name: '以上', desc: '価格がレベル以上' },
+            { id: 'below_level', name: '以下', desc: '価格がレベル以下' },
+            { id: 'cross_up_level', name: '上抜け', desc: '価格がレベルを上抜け' },
+            { id: 'cross_down_level', name: '下抜け', desc: '価格がレベルを下抜け' }
         ];
         if (detail === 'ma_compare') return [
-            { id: 'above_ma', name: 'MA�ȏ�', desc: '���i��MA����' },
-            { id: 'below_ma', name: 'MA�ȉ�', desc: '���i��MA��艺' }
+            { id: 'above_ma', name: 'MA以上', desc: '価格がMAより上' },
+            { id: 'below_ma', name: 'MA以下', desc: '価格がMAより下' }
         ];
     }
-    return [{ id: 'default', name: '�f�t�H���g', desc: '�f�t�H���g��I������ꍇ' }];
+    return [{ id: 'default', name: 'デフォルト', desc: 'デフォルトを選択した場合' }];
 }
 
 function getValueInputsForCondition(category, detail, conditionType) {
@@ -3132,61 +3246,61 @@ function getValueInputsForCondition(category, detail, conditionType) {
     if (category === 'indicator') {
         switch (detail) {
             case 'ma':
-                inputs.push({ id: 'period', label: '����', type: 'number', default: 20, min: 1 });
-                inputs.push({ id: 'shortPeriod', label: '�Z��MA����', type: 'number', default: 5, min: 1 });
-                inputs.push({ id: 'longPeriod', label: '����MA����', type: 'number', default: 20, min: 1 });
-                inputs.push({ id: 'method', label: 'MA���', type: 'select', options: [{ value: 'sma', label: 'SMA' }, { value: 'ema', label: 'EMA' }, { value: 'smma', label: 'SMMA' }, { value: 'lwma', label: 'LWMA' }] });
+                inputs.push({ id: 'period', label: '期間', type: 'number', default: 20, min: 1 });
+                inputs.push({ id: 'shortPeriod', label: '短期MA期間', type: 'number', default: 5, min: 1 });
+                inputs.push({ id: 'longPeriod', label: '長期MA期間', type: 'number', default: 20, min: 1 });
+                inputs.push({ id: 'method', label: 'MA種別', type: 'select', options: [{ value: 'sma', label: 'SMA' }, { value: 'ema', label: 'EMA' }, { value: 'smma', label: 'SMMA' }, { value: 'lwma', label: 'LWMA' }] });
                 break;
             case 'rsi':
-                inputs.push({ id: 'period', label: '����', type: 'number', default: 14, min: 1 });
-                inputs.push({ id: 'level', label: '���x��', type: 'number', default: conditionType === 'oversold' ? 30 : 70, min: 0, max: 100 });
+                inputs.push({ id: 'period', label: '期間', type: 'number', default: 14, min: 1 });
+                inputs.push({ id: 'level', label: 'レベル', type: 'number', default: conditionType === 'oversold' ? 30 : 70, min: 0, max: 100 });
                 break;
             case 'macd':
-                inputs.push({ id: 'fastPeriod', label: 'Fast����', type: 'number', default: 12, min: 1 });
-                inputs.push({ id: 'slowPeriod', label: 'Slow����', type: 'number', default: 26, min: 1 });
-                inputs.push({ id: 'signalPeriod', label: 'Signal����', type: 'number', default: 9, min: 1 });
+                inputs.push({ id: 'fastPeriod', label: 'Fast期間', type: 'number', default: 12, min: 1 });
+                inputs.push({ id: 'slowPeriod', label: 'Slow期間', type: 'number', default: 26, min: 1 });
+                inputs.push({ id: 'signalPeriod', label: 'Signal期間', type: 'number', default: 9, min: 1 });
                 break;
             case 'bb':
-                inputs.push({ id: 'period', label: '����', type: 'number', default: 20, min: 1 });
-                inputs.push({ id: 'deviation', label: '�΍�', type: 'number', default: 2.0, min: 0.1, step: 0.1 });
+                inputs.push({ id: 'period', label: '期間', type: 'number', default: 20, min: 1 });
+                inputs.push({ id: 'deviation', label: '偏差', type: 'number', default: 2.0, min: 0.1, step: 0.1 });
                 break;
             case 'stochastic':
-                inputs.push({ id: 'kPeriod', label: '%K����', type: 'number', default: 5, min: 1 });
-                inputs.push({ id: 'dPeriod', label: '%D����', type: 'number', default: 3, min: 1 });
-                inputs.push({ id: 'slowing', label: '�X���[�C���O', type: 'number', default: 3, min: 1 });
+                inputs.push({ id: 'kPeriod', label: '%K期間', type: 'number', default: 5, min: 1 });
+                inputs.push({ id: 'dPeriod', label: '%D期間', type: 'number', default: 3, min: 1 });
+                inputs.push({ id: 'slowing', label: 'スローイング', type: 'number', default: 3, min: 1 });
                 if (conditionType === 'oversold' || conditionType === 'overbought' || conditionType === 'above_level' || conditionType === 'below_level') {
                     const defLevel = (conditionType === 'oversold' || conditionType === 'below_level') ? 20 : 80;
-                    inputs.push({ id: 'level', label: '���x��', type: 'number', default: defLevel, min: 0, max: 100 });
+                    inputs.push({ id: 'level', label: 'レベル', type: 'number', default: defLevel, min: 0, max: 100 });
                 }
                 break;
             case 'ichimoku':
-                inputs.push({ id: 'tenkan', label: '�]��������', type: 'number', default: 9, min: 1 });
-                inputs.push({ id: 'kijun', label: '�������', type: 'number', default: 26, min: 1 });
-                inputs.push({ id: 'senkou', label: '��s����', type: 'number', default: 52, min: 1 });
+                inputs.push({ id: 'tenkan', label: '転換線期間', type: 'number', default: 9, min: 1 });
+                inputs.push({ id: 'kijun', label: '基準線期間', type: 'number', default: 26, min: 1 });
+                inputs.push({ id: 'senkou', label: '先行期間', type: 'number', default: 52, min: 1 });
                 break;
             case 'parabolic':
                 inputs.push({ id: 'step', label: 'Step', type: 'number', default: 0.02, min: 0.001, step: 0.001 });
                 inputs.push({ id: 'max', label: 'Maximum', type: 'number', default: 0.2, min: 0.01, step: 0.01 });
                 break;
             case 'cci':
-                inputs.push({ id: 'period', label: '����', type: 'number', default: 14, min: 1 });
-                inputs.push({ id: 'overbought', label: '����ꂷ�����x��', type: 'number', default: 100 });
-                inputs.push({ id: 'oversold', label: '����ꂷ�����x��', type: 'number', default: -100 });
+                inputs.push({ id: 'period', label: '期間', type: 'number', default: 14, min: 1 });
+                inputs.push({ id: 'overbought', label: '買われすぎレベル', type: 'number', default: 100 });
+                inputs.push({ id: 'oversold', label: '売られすぎレベル', type: 'number', default: -100 });
                 break;
             case 'atr':
-                inputs.push({ id: 'period', label: '����', type: 'number', default: 14, min: 1 });
-                inputs.push({ id: 'threshold', label: '臒l', type: 'number', default: 0.001, step: 0.0001 });
+                inputs.push({ id: 'period', label: '期間', type: 'number', default: 14, min: 1 });
+                inputs.push({ id: 'threshold', label: '閾値', type: 'number', default: 0.001, step: 0.0001 });
                 break;
         }
     } else if (category === 'price') {
-        if (detail === 'level') inputs.push({ id: 'level', label: '���i���x��', type: 'number', default: 0, step: 0.00001 });
-        else if (detail === 'ma_compare') inputs.push({ id: 'maPeriod', label: 'MA����', type: 'number', default: 20, min: 1 });
+        if (detail === 'level') inputs.push({ id: 'level', label: '価格レベル', type: 'number', default: 0, step: 0.00001 });
+        else if (detail === 'ma_compare') inputs.push({ id: 'maPeriod', label: 'MA期間', type: 'number', default: 20, min: 1 });
     }
     return inputs;
 }
 
 function getCategoryName(category) {
-    const names = { indicator: '�C���W�P�[�^�[', candle: '���[�\�N��', pattern: '�p�^�[��', price: '���i' };
+    const names = { indicator: 'インジケーター', candle: 'ローソク足', pattern: 'パターン', price: '価格' };
     return names[category] || category;
 }
 
@@ -3199,16 +3313,16 @@ function getDetailName(category, detailId) {
     
     // Hardcoded fallbacks for common indicators
     const fallbacks = {
-        'stochastic': '�X�g�L���X�e�B�N�X',
-        'stoch': '�X�g�L���X�e�B�N�X',
-        'ichimoku': '��ڋύt�\',
-        'ma': '�ړ����ϐ�(MA)',
+        'stochastic': 'ストキャスティクス',
+        'stoch': 'ストキャスティクス',
+        'ichimoku': '一目均衡表',
+        'ma': '移動平均線(MA)',
         'rsi': 'RSI',
         'macd': 'MACD',
-        'bb': '�{�����W���[�o���h',
+        'bb': 'ボリンジャーバンド',
         'cci': 'CCI',
         'atr': 'ATR',
-        'parabolic': '�p���{���b�NSAR'
+        'parabolic': 'パラボリックSAR'
     };
     return fallbacks[detailId] || detailId;
 }
@@ -3221,16 +3335,16 @@ function getConditionTypeName(category, detailId, typeId) {
     
     // Hardcoded fallbacks
     const fallbacks = {
-        'above_kumo': '�_�̏�',
-        'below_kumo': '�_�̉�',
-        'kumo_break': '�_����',
-        'tenkan_kijun': '�]����/����N���X',
-        'above_level': '���x���ȏ�',
-        'below_level': '���x���ȉ�',
-        'oversold': '����ꂷ��',
-        'overbought': '����ꂷ��',
-        'cross_up': '�S�[���f���N���X/�㔲��',
-        'cross_down': '�f�b�h�N���X/������'
+        'above_kumo': '雲の上',
+        'below_kumo': '雲の下',
+        'kumo_break': '雲抜け',
+        'tenkan_kijun': '転換線/基準線クロス',
+        'above_level': 'レベル以上',
+        'below_level': 'レベル以下',
+        'oversold': '売られすぎ',
+        'overbought': '買われすぎ',
+        'cross_up': 'ゴールデンクロス/上抜け',
+        'cross_down': 'デッドクロス/下抜け'
     };
     return fallbacks[typeId] || typeId;
 }
@@ -3243,16 +3357,16 @@ function setupModals() {
     const helpModal = document.getElementById('help-modal');
     if (helpModal) helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.classList.remove('active'); });
 
-    // �E�B�U�[�h���[�_���̃N���[�Y
+    // ウィザードモーダルのクローズ
     const wizardClose = document.getElementById('wizard-close');
     if (wizardClose) wizardClose.addEventListener('click', () => { closeWizard(); });
     const wizardModal = document.getElementById('wizard-modal');
     if (wizardModal) wizardModal.addEventListener('click', (e) => { if (e.target === wizardModal) closeWizard(); });
 
-    // �o�b�N�e�X�g�E���|�[�g���[�_���̃N���[�Y���� (Global Function�o�R)
+    // バックテスト・レポートモーダルのクローズ処理 (Global Function経由)
     const reportClose = document.getElementById('report-close');
     if (reportClose) {
-        // �����̃��X�i�[������\����l�����Aonclick�����ł̏㏑����D��
+        // 既存のリスナーがある可能性を考慮し、onclick属性での上書きを優先
         reportClose.onclick = window.hideBacktestReport;
     }
     const reportModal = document.getElementById('backtest-report-modal');
@@ -3262,7 +3376,7 @@ function setupModals() {
         });
     }
 
-    // Escape�L�[�őS�Ẵ��[�_�������
+    // Escapeキーで全てのモーダルを閉じる
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             window.hideBacktestReport();
@@ -3276,7 +3390,7 @@ function setupModals() {
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    const icons = { success: '?', error: '?', warning: '??', info: '??' };
+    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span class="toast-message">${escapeHtml(message)}</span>`;
@@ -3400,12 +3514,12 @@ async function fetchEconomicIndicators() {
 
   const dateStr = dateInput.value.replace(/-/g, '');
   if (!dateStr || dateStr.length !== 8) {
-    statusEl.textContent = '? ���t��I����Ă�������';
+    statusEl.textContent = '❌ 日付を選択してください';
     return;
   }
 
   const url = `https://kissfx.com/article/fxdays${dateStr}.html`;
-  statusEl.textContent = '? �擾��...';
+  statusEl.textContent = '⏳ 取得中...';
 
   try {
     // Use CORS proxy
@@ -3416,7 +3530,7 @@ async function fetchEconomicIndicators() {
 
     const indicators = parseHitsuzikaiHtml(html);
     if (indicators.length === 0) {
-      statusEl.textContent = '?? �w�W�f�[�^��������܂���ł���';
+      statusEl.textContent = '⚠️ 指標データが見つかりませんでした';
       return;
     }
 
@@ -3436,11 +3550,11 @@ async function fetchEconomicIndicators() {
 
     // Render list
     renderNewsEventList(filtered);
-    statusEl.textContent = `�擾����: ${indicators.length}���� ${filtered.length}����Ώ�`;
+    statusEl.textContent = `取得完了: ${indicators.length}件中 ${filtered.length}件を対象`;
 
   } catch (err) {
     console.warn('News fetch error:', err);
-    statusEl.textContent = '? �擾�Ɏ��s���܂����B�蓮�Œǉ����Ă��������B';
+    statusEl.textContent = '❌ 取得に失敗しました。手動で追加してください。';
   }
 }
 
@@ -3470,7 +3584,7 @@ function parseHitsuzikaiHtml(html) {
       let name = '';
       for (let i = 1; i < cells.length; i++) {
         const text = cells[i]?.textContent?.trim();
-        if (text && text.length > 3 && !text.match(/^[\s������������??������]*$/)) {
+        if (text && text.length > 3 && !text.match(/^[\s★☆■□◆◇▶▷●○◎]*$/)) {
           name = text;
           break;
         }
@@ -3478,9 +3592,9 @@ function parseHitsuzikaiHtml(html) {
       if (!name) continue;
 
       // Count star images for rank
-      const imgs = row.querySelectorAll('img[src*="star"], img[alt*="��"]');
+      const imgs = row.querySelectorAll('img[src*="star"], img[alt*="星"]');
       const starText = row.textContent;
-      let starCount = (starText.match(/��/g) || []).length;
+      let starCount = (starText.match(/★/g) || []).length;
       if (starCount === 0) starCount = imgs.length;
 
       let rank = 'C';
@@ -3502,7 +3616,7 @@ function renderNewsEventList(events) {
   if (!listEl) return;
 
   if (!events || events.length === 0) {
-    listEl.innerHTML = '<p class="form-hint">�w�W�C�x���g���o�^</p>';
+    listEl.innerHTML = '<p class="form-hint">指標イベント未登録</p>';
     return;
   }
 
@@ -3513,7 +3627,7 @@ function renderNewsEventList(events) {
       <span class="time">${timeStr}</span>
       <span class="name">${escapeHtml(ev.name || ev.label || '')}</span>
       <span class="news-rank-badge ${rankClass}">${ev.rank}</span>
-      <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.75rem;" onclick="removeNewsEvent(${idx})">�폜</button>
+      <button class="btn btn-secondary" style="padding:4px 8px;font-size:0.75rem;" onclick="removeNewsEvent(${idx})">削除</button>
     </div>`;
   }).join('');
 }
@@ -3830,16 +3944,16 @@ class BacktestEngine {
     constructor(data, state) {
         this.data = data;
         this.state = state;
-        this.balance = 1000000; // �������� 1,000,000�~
+        this.balance = 1000000; // 初期資金 1,000,000円
         this.equity = 1000000;
         this.positions = [];
         this.history = [];
         this.indicators = {};
         this.equityHistory = [];
-        this.spread = state.maxSpread || 2.0; // �Œ�X�v���b�h�ipips�j
+        this.spread = state.maxSpread || 2.0; // 固定スプレッド（pips）
     }
 
-    // ����Ȃǂ̕]��
+    // 条件などの評価
     evalCondition(cond, i) {
         if (!cond || !cond.indicator) return false;
         const ind = cond.indicator;
@@ -3903,15 +4017,15 @@ class BacktestEngine {
     run() {
         console.log('Running Backtest Engine...');
         
-        // 1. �C���W�P�[�^�[�̎��O�v�Z
+        // 1. インジケーターの事前計算
         this.precalculate();
 
-        // 2. ���C�����[�v
+        // 2. メインループ
         for (let i = 50; i < this.data.length; i++) {
             this.processBar(i);
         }
 
-        // �I�����ɑS�|�W�V��������
+        // 終了時に全ポジション決済
         this.closeAll(this.data.length - 1);
 
         return this.getResults();
@@ -3949,16 +4063,16 @@ class BacktestEngine {
     processBar(i) {
         const bar = this.data[i];
         
-        // �����|�W�V�����̃`�F�b�N (TP/SL/Exit)
+        // 既存ポジションのチェック (TP/SL/Exit)
         this.updatePositions(i);
 
-        // �t�B���^�[�`�F�b�N
+        // フィルターチェック
         if (!this.checkFilters(i)) {
             this.equityHistory.push(this.calculateEquity(i));
             return;
         }
 
-        // �V�K�G���g���[����
+        // 新規エントリー判定
         if (this.positions.length < (this.state.maxPositions || 1)) {
             const buySignal = this.checkSignal('buy', i);
             const sellSignal = this.checkSignal('sell', i);
@@ -3973,17 +4087,17 @@ class BacktestEngine {
     checkFilters(i) {
         const bar = this.data[i];
         
-        // �X�v���b�h�t�B���^�[
+        // スプレッドフィルター
         if (this.state.useSpreadFilter && this.spread > this.state.maxSpread) return false;
 
-        // ���ԃt�B���^�[
+        // 時間フィルター
         if (this.state.useTimeFilter) {
             const d = new Date(bar.time);
             const hour = d.getHours();
             if (hour < this.state.timeStartHour || hour > this.state.timeEndHour) return false;
         }
 
-        // �j���t�B���^�[
+        // 曜日フィルター
         if (this.state.useDayFilter) {
             const d = new Date(bar.time);
             const day = d.getDay();
@@ -3997,11 +4111,11 @@ class BacktestEngine {
         const bar = this.data[i];
         let floating = 0;
         const point = this.getPoint();
-        const pipValue = point === 0.01 ? 1000 : 1000; // �ȈՓI�� 1pips=1000�~/lot
+        const pipValue = point === 0.01 ? 1000 : 1000; // 簡易的に 1pips=1000円/lot
         
         this.positions.forEach(pos => {
             const pips = pos.type === 'buy' ? (bar.close - pos.entryPrice) / point : (pos.entryPrice - bar.close) / point;
-            floating += pips * pos.lot * 10000; // 1.0 lot = 100,000�ʉ�, 1pips=1,000�~�z��
+            floating += pips * pos.lot * 10000; // 1.0 lot = 100,000通貨, 1pips=1,000円想定
         });
         return this.balance + floating;
     }
@@ -4034,7 +4148,7 @@ class BacktestEngine {
     }
 
     getPoint() {
-        // ���i���猅�𐄑� (150.123 -> 0.01, 1.08123 -> 0.0001)
+        // 価格から桁を推測 (150.123 -> 0.01, 1.08123 -> 0.0001)
         const price = this.data[0].close;
         return price > 50 ? 0.01 : 0.0001;
     }
@@ -4069,7 +4183,7 @@ class BacktestEngine {
         const pos = this.positions[idx];
         const point = this.getPoint();
         const pips = pos.type === 'buy' ? (price - pos.entryPrice) / point : (pos.entryPrice - price) / point;
-        const profit = pips * pos.lot * 10000; // 1lot = 100,000�ʉ�, 1pips=1,000�~�z��
+        const profit = pips * pos.lot * 10000; // 1lot = 100,000通貨, 1pips=1,000円想定
         
         this.balance += profit;
         this.history.push({ ...pos, closePrice: price, closeTime: this.data[i].time, pips, profit });
@@ -4088,7 +4202,7 @@ class BacktestEngine {
         const totalProfit = this.history.reduce((sum, t) => sum + (t.profit > 0 ? t.profit : 0), 0);
         const totalLoss = Math.abs(this.history.reduce((sum, t) => sum + (t.profit < 0 ? t.profit : 0), 0));
 
-        // �ő�h���[�_�E���v�Z
+        // 最大ドローダウン計算
         let maxEquity = -Infinity;
         let maxDD = 0;
         this.equityHistory.forEach(equity => {
@@ -4168,12 +4282,12 @@ function renderBacktestHistory() {
             <div class="history-info" onclick="loadBacktestHistoryItem(${i})">
                 <span class="history-name">${h.state.eaName || 'Unnamed EA'}</span>
                 <div class="history-meta">
-                    <span>?? ${h.timestamp}</span><br>
-                    <span>?? ${h.state.buyConditions.length} ���</span>
+                    <span>📅 ${h.timestamp}</span><br>
+                    <span>🔍 ${h.state.buyConditions.length} 条件</span>
                 </div>
-                <div class="history-result">?? ${h.profit} JPY (${h.winRate || '---'})</div>
+                <div class="history-result">💰 ${h.profit} JPY (${h.winRate || '---'})</div>
             </div>
-            <button class="btn btn-outline btn-sm" onclick="showBacktestReport(${i})" style="margin-top:10px; width:100%;">?? ���|�[�g��\��</button>
+            <button class="btn btn-outline btn-sm" onclick="showBacktestReport(${i})" style="margin-top:10px; width:100%;">📊 レポートを表示</button>
         </div>
     `).join('');
 }
@@ -4182,14 +4296,14 @@ window.loadBacktestHistoryItem = function(index) {
     const history = JSON.parse(localStorage.getItem('ea_backtest_history') || '[]');
     if (!history[index]) return;
 
-    if (confirm('�ۑ����ꂽ������烍�W�b�N�𕜌����܂����H�i���݂̐ݒ�͏㏑������܂��j')) {
+    if (confirm('保存された履歴からロジックを復元しますか？（現在の設定は上書きされます）')) {
         eaState = JSON.parse(JSON.stringify(history[index].state));
-        showToast('�\���𕜌����܂���', 'success');
+        showToast('構成を復元しました', 'success');
         
-        // ��ʂ���t���b�V���i�ȈՓI��Step 0�ɖ߂����A�e���͂𓯊�������K�v�����邪�A
-        // ��������ۂ��߃����[�h�ɋ߂�����܂��͍ĕ`�悪�K�v�j
-        // �����ł͈�UUI�̍ď������𑣂����b�Z�[�W��o��
-        showToast('�ݒ��ǂݍ��݂܂����B�m�F�̂��ߊe�X�e�b�v��������Ă��������B', 'info');
+        // 画面をリフレッシュ（簡易的にStep 0に戻すか、各入力を同期させる必要があるが、
+        // 整合性を保つためリロードに近い動作または再描画が必要）
+        // ここでは一旦UIの再初期化を促すメッセージを出す
+        showToast('設定を読み込みました。確認のため各ステップを見直してください。', 'info');
     }
 };
 
@@ -4199,17 +4313,17 @@ async function handleWebFetch() {
     const statusEl = document.getElementById('web-fetch-status');
     
     if (!symbol) {
-        showToast('�V���{������͂��Ă�������', 'warning');
+        showToast('シンボルを入力してください', 'warning');
         return;
     }
 
-    if (statusEl) statusEl.textContent = '? �f�[�^�擾��...';
-    showToast(`${symbol} �̃f�[�^��擾��...`, 'info');
+    if (statusEl) statusEl.textContent = '⏳ データ取得中...';
+    showToast(`${symbol} のデータを取得中...`, 'info');
 
     try {
         const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=1000`;
         const response = await fetch(url);
-        if (!response.ok) throw new Error('�f�[�^�擾�Ɏ��s���܂����B�V���{���������������m�F���Ă��������B');
+        if (!response.ok) throw new Error('データ取得に失敗しました。シンボル名が正しいか確認してください。');
         
         const rawData = await response.json();
         const data = rawData.map(d => ({
@@ -4222,13 +4336,13 @@ async function handleWebFetch() {
         }));
 
         backtestData = data;
-        if (statusEl) statusEl.textContent = `? ${data.length}�{�̃f�[�^��擾���܂����B`;
-        showToast('Web�f�[�^�̎擾���������܂���', 'success');
+        if (statusEl) statusEl.textContent = `✅ ${data.length}本のデータを取得しました。`;
+        showToast('Webデータの取得が完了しました', 'success');
         
     } catch (error) {
         console.error('Web Fetch Error:', error);
-        if (statusEl) statusEl.textContent = '? �G���[: ' + error.message;
-        showToast('�擾�Ɏ��s���܂���', 'error');
+        if (statusEl) statusEl.textContent = '❌ エラー: ' + error.message;
+        showToast('取得に失敗しました', 'error');
     }
 }
 
@@ -4237,14 +4351,14 @@ async function handleCsvUpload(e) {
     if (!file) return;
     
     const statusEl = document.getElementById('csv-status');
-    if (statusEl) statusEl.textContent = '? �t�@�C����ǂݍ��ݒ�...';
+    if (statusEl) statusEl.textContent = '⏳ ファイルを読み込み中...';
     
     try {
         const text = await file.text();
         const rows = text.split('\n');
         const data = [];
         
-        // �ȈՃp�[�X: Date,Time,Open,High,Low,Close,Volume
+        // 簡易パース: Date,Time,Open,High,Low,Close,Volume
         for (let i = 0; i < rows.length; i++) {
             const cols = rows[i].split(',');
             if (cols.length < 6) continue;
@@ -4255,7 +4369,7 @@ async function handleCsvUpload(e) {
             const c = parseFloat(cols[5]);
             
             if (!isNaN(o) && !isNaN(h) && !isNaN(l) && !isNaN(c)) {
-                // ���t�`���� yyyy-mm-dd �ɐ��K���iDate�N���X�p�j
+                // 日付形式を yyyy-mm-dd に正規化（Dateクラス用）
                 const datePart = cols[0].replace(/\./g, '-');
                 data.push({
                     time: datePart + ' ' + cols[1],
@@ -4267,34 +4381,34 @@ async function handleCsvUpload(e) {
             }
         }
         
-        if (data.length === 0) throw new Error('�L���ȃf�[�^��������܂���ł����B');
+        if (data.length === 0) throw new Error('有効なデータが見つかりませんでした。');
         
         backtestData = data;
-        if (statusEl) statusEl.textContent = `? ${data.length}�s�̃f�[�^��ǂݍ��݂܂����B`;
-        showToast('�f�[�^�̓ǂݍ��݂��������܂���', 'success');
+        if (statusEl) statusEl.textContent = `✅ ${data.length}行のデータを読み込みました。`;
+        showToast('データの読み込みが完了しました', 'success');
         
     } catch (error) {
         console.error('CSV Load Error:', error);
-        if (statusEl) statusEl.textContent = '? �G���[: ' + error.message;
-        showToast('�ǂݍ��݂Ɏ��s���܂���', 'error');
+        if (statusEl) statusEl.textContent = '❌ エラー: ' + error.message;
+        showToast('読み込みに失敗しました', 'error');
     }
 }
 
 function runBacktest() {
     if (backtestData.length === 0) {
-        showToast('�o�b�N�e�X�g�p�f�[�^(CSV)���ɃA�b�v���[�h���Ă�������', 'warning');
+        showToast('バックテスト用データ(CSV)を先にアップロードしてください', 'warning');
         return;
     }
     
-    showToast('�o�b�N�e�X�g����s��...', 'info');
+    showToast('バックテストを実行中...', 'info');
     
-    // �G���W���̋N��
+    // エンジンの起動
     setTimeout(() => {
         try {
             const engine = new BacktestEngine(backtestData, eaState);
             const results = engine.run();
             
-            // UI�X�V
+            // UI更新
             const views = {
                 'res-total-profit': results.profit + ' JPY',
                 'res-win-rate': results.winRate,
@@ -4307,13 +4421,13 @@ function runBacktest() {
                 if (el) el.textContent = val;
             }
             
-            // ����e�[�u���̍X�V
+            // 履歴テーブルの更新
             updateTradeHistoryTable(results.history);
 
-            // ���Y�Ȑ��̕`��
+            // 資産曲線の描画
             drawEquityChart(results.equityHistory);
             
-            // ����ւ̕ۑ�
+            // 履歴への保存
             const resultForHistory = {
                 ...results,
                 eaName: eaState.eaName || 'MyEA',
@@ -4322,10 +4436,10 @@ function runBacktest() {
             };
             saveBacktestToHistory(resultForHistory);
             
-            showToast('�o�b�N�e�X�g���������܂���', 'success');
+            showToast('バックテストが完了しました', 'success');
         } catch (error) {
             console.error('Backtest Execution Error:', error);
-            showToast('�o�b�N�e�X�g���s���ɃG���[���������܂���', 'error');
+            showToast('バックテスト実行中にエラーが発生しました', 'error');
         }
     }, 500);
 }
@@ -4410,7 +4524,7 @@ function saveToGallery() {
     };
     gallery.unshift(newEntry);
     localStorage.setItem('ea_labo_gallery', JSON.stringify(gallery));
-    showToast('�M�������[�ɕۑ����܂���', 'success');
+    showToast('ギャラリーに保存しました', 'success');
     renderGallery();
     showEAStep(8);
 }
@@ -4421,7 +4535,7 @@ function renderGallery() {
 
     let gallery = JSON.parse(localStorage.getItem('ea_labo_gallery') || '[]');
     if (gallery.length === 0) {
-        grid.innerHTML = '<p class="form-hint">�ۑ����ꂽ�헪������܂���B�u�ۑ��v�{�^������EA��M�������[�ɒǉ����Ă��������B</p>';
+        grid.innerHTML = '<p class="form-hint">保存された戦略がありません。「保存」ボタンからEAをギャラリーに追加してください。</p>';
         return;
     }
 
@@ -4432,8 +4546,8 @@ function renderGallery() {
             <p class="gallery-meta">Created: ${item.date}</p>
             <div class="gallery-stats">Win Rate: ${item.winRate}</div>
             <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary btn-sm" onclick="loadFromGallery(${item.id})">�Ǎ�</button>
-                <button class="btn btn-outline-danger btn-sm" onclick="removeFromGallery(${item.id})">�폜</button>
+                <button class="btn btn-secondary btn-sm" onclick="loadFromGallery(${item.id})">読込</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="removeFromGallery(${item.id})">削除</button>
             </div>
         </div>
     `).join('');
@@ -4445,13 +4559,13 @@ window.loadFromGallery = function(id) {
     if (entry) {
         Object.assign(eaState, entry.state);
         applyStateToUI();
-        showToast('�ݒ��ǂݍ��݂܂���', 'success');
+        showToast('設定を読み込みました', 'success');
         showEAStep(1);
     }
 };
 
 window.removeFromGallery = function(id) {
-    if (!confirm('���̐헪��폜���܂����H')) return;
+    if (!confirm('この戦略を削除しますか？')) return;
     let gallery = JSON.parse(localStorage.getItem('ea_labo_gallery') || '[]');
     gallery = gallery.filter(item => item.id !== id);
     localStorage.setItem('ea_labo_gallery', JSON.stringify(gallery));
@@ -4459,7 +4573,7 @@ window.removeFromGallery = function(id) {
 };
 
 window.loadPublicEA = function(id) {
-    showToast('�p�u���b�N�헪�̓ǂݍ��݂̓f���p�ł�', 'info');
+    showToast('パブリック戦略の読み込みはデモ用です', 'info');
 };
 
 // --- setupToggleCards call is moved into specific function or called at end safely ---
@@ -4481,7 +4595,7 @@ window.showBacktestReport = function(index) {
     const h = history[index];
     if (!h) return;
 
-    // ���_���̒l��Z�b�g
+    // モダンの値をセット
     document.getElementById('report-profit').textContent = h.profit + ' JPY';
     document.getElementById('report-winrate').textContent = h.winRate || '65.4%';
     document.getElementById('report-pf').textContent = h.pf || '1.85';
@@ -4495,7 +4609,7 @@ window.showBacktestReport = function(index) {
 };
 
 // ============================================================
-// [A-130] Logic Map Sidebar ? �����G���W��
+// [A-130] Logic Map Sidebar — 可視化エンジン
 // ============================================================
 function setupLogicSidebar() {
     const toggleBtn = document.getElementById('logic-sidebar-toggle');
@@ -4531,64 +4645,64 @@ window.renderLogicMap = function() {
     const hasExit = eaState.exitConditions && eaState.exitConditions.length > 0;
 
     if (!hasBuy && !hasSell && !hasExit && !eaState.usePerfectOrder && !eaState.useAdxFilter && !eaState.useTimeFilter) {
-        container.innerHTML = '<p class="empty-msg">�����ݒ肷��ƃ}�b�v����������܂�</p>';
+        container.innerHTML = '<p class="empty-msg">条件を設定するとマップが生成されます</p>';
         return;
     }
 
-    // 1. �G���g���[����Z�N�V����
+    // 1. エントリー条件セクション
     if (hasBuy || hasSell) {
         html += '<div class="logic-node">';
-        html += '<div class="node-title">?? �G���g���[��� (' + eaState.buyCombine + ')</div>';
+        html += '<div class="node-title">🔍 エントリー条件 (' + eaState.buyCombine + ')</div>';
         html += '<div class="node-content">';
-        html += eaState.buyConditions.map(c => '<div class="node-item buy">?? Buy: ' + getConditionSimpleDesc(c) + '</div>').join('');
-        html += eaState.sellConditions.map(c => '<div class="node-item sell">?? Sell: ' + getConditionSimpleDesc(c) + '</div>').join('');
+        html += eaState.buyConditions.map(c => '<div class="node-item buy">🟢 Buy: ' + getConditionSimpleDesc(c) + '</div>').join('');
+        html += eaState.sellConditions.map(c => '<div class="node-item sell">🔴 Sell: ' + getConditionSimpleDesc(c) + '</div>').join('');
         html += '</div></div>';
-        html += '<div class="node-connector">��</div>';
+        html += '<div class="node-connector">↓</div>';
     }
 
-    // 2. �t�B���^�[�Z�N�V����
+    // 2. フィルターセクション
     let filters = [];
-    if (eaState.useSpreadFilter) filters.push('�X�v���b�h');
-    if (eaState.useTimeFilter) filters.push('���ԃt�B���^�[');
-    if (eaState.usePerfectOrder) filters.push('�p�[�t�F�N�g�I�[�_�[');
-    if (eaState.useAdxFilter) filters.push('ADX�t�B���^�[');
-    if (eaState.useDayFilter) filters.push('�j���t�B���^�[');
+    if (eaState.useSpreadFilter) filters.push('スプレッド');
+    if (eaState.useTimeFilter) filters.push('時間フィルター');
+    if (eaState.usePerfectOrder) filters.push('パーフェクトオーダー');
+    if (eaState.useAdxFilter) filters.push('ADXフィルター');
+    if (eaState.useDayFilter) filters.push('曜日フィルター');
 
     if (filters.length > 0) {
         html += '<div class="logic-node">';
-        html += '<div class="node-title">??? �t�B���^�[</div>';
+        html += '<div class="node-title">🛡️ フィルター</div>';
         html += '<div class="node-content">';
-        html += filters.map(f => '<div class="node-item filter">? ' + f + '</div>').join('');
+        html += filters.map(f => '<div class="node-item filter">✅ ' + f + '</div>').join('');
         html += '</div></div>';
-        html += '<div class="node-connector">��</div>';
+        html += '<div class="node-connector">↓</div>';
     }
 
-    // 3. �헪�Z�N�V����
+    // 3. 戦略セクション
     if (eaState.strategies && eaState.strategies.length > 0) {
         html += '<div class="logic-node">';
-        html += '<div class="node-title">?? �|�W�V�����헪</div>';
+        html += '<div class="node-title">⚙️ ポジション戦略</div>';
         html += '<div class="node-content">';
-        html += eaState.strategies.map(s => '<div class="node-item">?? ' + s.toUpperCase() + '</div>').join('');
+        html += eaState.strategies.map(s => '<div class="node-item">🔄 ' + s.toUpperCase() + '</div>').join('');
         html += '</div></div>';
-        html += '<div class="node-connector">��</div>';
+        html += '<div class="node-connector">↓</div>';
     }
 
-    // 4. �G�O�W�b�g�Z�N�V����
+    // 4. エグジットセクション
     if (hasExit || eaState.useTrailing || eaState.useAutoClose) {
         html += '<div class="logic-node">';
-        html += '<div class="node-title">?? �G�O�W�b�g���[��</div>';
+        html += '<div class="node-title">🎯 エグジットルール</div>';
         html += '<div class="node-content">';
-        if (eaState.useTrailing) html += '<div class="node-item filter">?? �Ǐ]���� (TS)</div>';
-        if (eaState.useAutoClose) html += '<div class="node-item filter">?? ��������</div>';
-        html += eaState.exitConditions.map(c => '<div class="node-item sell">?? �������: ' + getConditionSimpleDesc(c) + '</div>').join('');
+        if (eaState.useTrailing) html += '<div class="node-item filter">📈 追従決済 (TS)</div>';
+        if (eaState.useAutoClose) html += '<div class="node-item filter">⏱️ 自動決済</div>';
+        html += eaState.exitConditions.map(c => '<div class="node-item sell">🏁 条件決済: ' + getConditionSimpleDesc(c) + '</div>').join('');
         html += '</div></div>';
-        html += '<div class="node-connector">��</div>';
+        html += '<div class="node-connector">↓</div>';
     }
 
     // 5. Final Action
     html += '<div class="logic-node" style="border-color: var(--accent-success); border-width: 2px;">';
-    html += '<div class="node-title" style="color: var(--accent-success);">?? �����E���ώ��s</div>';
-    html += '<div class="node-content" style="font-size: 0.8rem; opacity: 0.8;">������v�ɂ����s����܂�</div>';
+    html += '<div class="node-title" style="color: var(--accent-success);">🚀 発注・決済実行</div>';
+    html += '<div class="node-content" style="font-size: 0.8rem; opacity: 0.8;">条件合致により実行されます</div>';
     html += '</div>';
 
     container.innerHTML = html;
@@ -4598,6 +4712,210 @@ function getConditionSimpleDesc(c) {
     if (!c) return '---';
     const indicator = c.indicator ? c.indicator.toUpperCase() : 'UNKNOWN';
     const type = c.type ? c.type.replace(/_/g, ' ') : 'CONDITION';
+    return indicator + ' (' + type + ')';
+}
+
+// 初期化時にセットアップをフック
+const originalSetupEAFlow = setupEAFlow;
+setupEAFlow = function() {
+    originalSetupEAFlow();
+    setupLogicSidebar();
+};
+
+
+// ==================== [A-110] パスワード認証機能 ====================
+/**
+ * パスワード認証の初期化
+ */
+
+    if (passwordInput) {
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+    }
+}
+
+// ==================== [A-120] MetaTrader 4/5 Integration Logic ====================
+/**
+ * Initialize MT4/MT5 settings UI and events
+ */
+function setupMTSettings() {
+    const platformSelect = document.getElementById('mt-platform');
+    const guideMT4 = document.getElementById('mt-guide-mt4');
+    const guideMT5 = document.getElementById('mt-guide-mt5');
+
+    const updateGuides = () => {
+        const platform = platformSelect ? platformSelect.value : 'mt5';
+        if (guideMT4) guideMT4.classList.toggle('hidden', platform !== 'mt4');
+        if (guideMT5) guideMT5.classList.toggle('hidden', platform !== 'mt5');
+    };
+
+    if (platformSelect) {
+        platformSelect.addEventListener('change', (e) => {
+            eaState.mtPlatform = e.target.value;
+            updateGuides();
+        });
+        updateGuides();
+    }
+
+    // Sync input fields to eaState
+    ['mt-symbol', 'mt-period', 'mt-model', 'mt-from-date', 'mt-to-date'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const key = id.replace('mt-', 'mt').replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+            el.addEventListener('change', (e) => eaState[key] = e.target.value);
+        }
+    });
+
+    const optCheck = document.getElementById('mt-optimization');
+    if (optCheck) optCheck.addEventListener('change', (e) => eaState.mtOptimization = e.target.checked);
+
+    const genBtn = document.getElementById('generate-mt-package');
+    if (genBtn) genBtn.onclick = () => generateMTPackage();
+
+    const runBtn = document.getElementById('run-mt-test');
+    if (runBtn) runBtn.onclick = () => runMTTest();
+
+    // Optimization Parameter Toggles
+    document.querySelectorAll('.opt-toggle input').forEach(toggle => {
+        const paramId = toggle.dataset.opt;
+        const rangePanel = document.getElementById('opt-range-' + paramId);
+        
+        toggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (!eaState.optParams[paramId]) eaState.optParams[paramId] = { start: 0, step: 0, stop: 0 };
+            } else {
+                delete eaState.optParams[paramId];
+            }
+            if (rangePanel) rangePanel.classList.toggle('hidden', !e.target.checked);
+        });
+
+        if (rangePanel) {
+            const inputs = rangePanel.querySelectorAll('input');
+            ['start', 'step', 'stop'].forEach((key, idx) => {
+                inputs[idx].addEventListener('change', (e) => {
+                    if (!eaState.optParams[paramId]) eaState.optParams[paramId] = { start: 0, step: 0, stop: 0 };
+                    eaState.optParams[paramId][key] = parseFloat(e.target.value) || 0;
+                });
+            });
+        }
+    });
+}
+
+/**
+ * ファイルダウンロードユーティリティ関数
+ */
+function downloadFile(filename, content) {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Generate MQL source, .set file and .ini config
+ */
+function generateMTPackage() {
+    const statusEl = document.getElementById('mt-config-status');
+    if (statusEl) {
+        statusEl.innerHTML = '⌛ Generating files...';
+        statusEl.className = 'form-hint';
+    }
+
+    try {
+        const ext = eaState.mtPlatform === 'mt4' ? 'mq4' : 'mq5';
+        const baseName = `01_Source_${eaState.eaName}`;
+        const sourceFile = baseName + '.' + ext;
+        const mqCode = EAGenerator.generate(eaState);
+        
+        // Download source
+        downloadFile(sourceFile, mqCode);
+
+        // Download .set file
+        const setContent = generateSetFile();
+        setTimeout(() => downloadFile(`02_Params_${eaState.eaName}.set`, setContent), 300);
+
+        // MT5 Configuration
+        if (eaState.mtPlatform === 'mt5') {
+            const iniContent = generateIniFile(baseName + '.ex5');
+            setTimeout(() => downloadFile(`03_AutoRun_${eaState.eaName}.ini`, iniContent), 600);
+            
+            const iniName = `03_AutoRun_${eaState.eaName}.ini`;
+            const batContent = `@echo off\nchcp 65001 >nul\necho =======================================================\necho EA Labo - MT5 バックテスト自動実行起動ツール\necho =======================================================\necho.\necho 【重要】\necho ダウンロードした全ての設定ファイル（.mq5, .set, .ini, .bat）を、必ず\necho お使いの「MQL5\\Experts」フォルダの中に移動させてから\necho このファイルをダブルクリックして実行してください。\necho.\necho （※ダウンロードフォルダ等で実行してもMT5はファイルを認識できず何も起きません！）\necho.\npause\necho.\necho MT5を起動して自動的にテストを開始します...\n"C:\\Program Files\\MetaTrader 5\\terminal64.exe" /config:"%~dp0${iniName}"\npause`;
+            setTimeout(() => downloadFile(`04_Start_Test_${eaState.eaName}.bat`, batContent), 900);
+        }
+
+        const folder = (eaState.mtPlatform === 'mt4' ? 'MQL4' : 'MQL5') + '\\Experts';
+        if (statusEl) {
+            statusEl.innerHTML = `✅ ダウンロードが開始されました。<br>ダウンロード済みのファイルをすべて、MT4/MT5の「${folder}」フォルダ内へ移動させてください。`;
+            statusEl.className = 'form-success mt-2';
+        }
+    } catch (err) {
+        if (statusEl) {
+            statusEl.innerHTML = '❌ Error: ' + err.message;
+            statusEl.className = 'form-error mt-2';
+        }
+    }
+}
+
+/**
+ * Generate .set file for parameter optimization
+ */
+function generateSetFile() {
+    let lines = [];
+    lines.push('MagicNumber=' + eaState.magicNumber);
+    lines.push('LotSize=' + eaState.lotSize);
+    // Add optimized parameters
+    Object.keys(eaState.optParams).forEach(p => {
+        const opt = eaState.optParams[p];
+        lines.push(p + '=' + opt.start);
+        lines.push(p + ',F=' + opt.start);
+        lines.push(p + ',1=' + opt.step);
+        lines.push(p + ',2=' + opt.stop);
+        lines.push(p + ',3=' + opt.start);
+        lines.push(p + ',4=1'); // Enable optimization
+    });
+    return lines.join('\n');
+}
+
+/**
+ * Generate .ini config for MT5 auto backtest
+ */
+function generateIniFile(expertName) {
+    const config = [
+        '[Tester]',
+        'Expert=' + expertName.replace('.ex5', ''),
+        'Symbol=' + eaState.mtSymbol,
+        'Period=' + (eaState.mtPeriod),
+        'Model=' + eaState.mtModel,
+        'FromDate=' + (eaState.mtFromDate || '2024.01.01').replace(/-/g, '.'),
+        'ToDate=' + (eaState.mtToDate || '2024.12.31').replace(/-/g, '.'),
+        'Optimization=' + (eaState.mtOptimization ? '1' : '0'),
+        'Report=' + eaState.eaName + '_Report',
+        'ReplaceReport=1',
+        'ShutdownTerminal=1'
+    ];
+    return config.join('\n');
+}
+
+/**
+ * Batch script to launch MT5 backtest
+ */
+function runMTTest() {
+    if (eaState.mtPlatform !== 'mt5') {
+        alert('Auto launch test is only supported for MT5. For MT4, please load the .set file manually.');
+        return;
+    }
+    const iniName = `03_AutoRun_${eaState.eaName}.ini`;
+    const batContent = `@echo off\nchcp 65001 >nul\necho =======================================================\necho EA Labo - MT5 バックテスト自動実行起動ツール\necho =======================================================\necho.\necho 【重要】\necho ダウンロードした全ての設定ファイル（.mq5, .set, .ini, .bat）を、必ず\necho お使いの「MQL5\\Experts」フォルダの中に移動させてから\necho このファイルをダブルクリックして実行してください。\necho.\necho （※ダウンロードフォルダ等で実行してもMT5はファイルを認識できず何も起きません！）\necho.\npause\necho.\necho MT5を起動して自動的にテストを開始します...\n"C:\\Program Files\\MetaTrader 5\\terminal64.exe" /config:"%~dp0${iniName}"\npause`;
+    downloadFile(`04_Start_Test_${eaState.eaName}.bat`, batContent);
+}
+
 
 
 /**
@@ -4626,6 +4944,8 @@ function generateIniFile(expertName) {
 function runOneClickMT5() {
     try {
         console.log('Starting runOneClickMT5...');
+        
+        // 驥崎ｦ・ 邨ｱ蜷育腸蠅・〒縺ｮ繝励Λ繝・ヨ繝輔か繝ｼ繝險ｭ螳壹ｒ蜷梧悄
         eaState.platform = eaState.mtPlatform || 'mt5';
 
         if (eaState.mtPlatform !== 'mt5') {
@@ -4633,18 +4953,20 @@ function runOneClickMT5() {
             return;
         }
 
-        const baseName = "01_Source_" + eaState.eaName;
-        const mqCode = EAGenerator.generate(eaState);
-        const setContent = generateSetFile();
-        const iniContent = generateIniFile(baseName + '.ex5');
-        const iniName = "AutoRun_" + eaState.eaName + ".ini";
+    const baseName = `01_Source_${eaState.eaName}`;
+    const mqCode = EAGenerator.generate(eaState);
+    const setContent = generateSetFile();
+    const iniContent = generateIniFile(baseName + '.ex5');
+    const iniName = `AutoRun_${eaState.eaName}.ini`;
 
-        const psScript = `# EA Labo - MT5 One-Click Auto Runner\n$ErrorActionPreference = "Stop"\n\n$eaName = "${eaState.eaName}"\n$mqlCode = @"\n${mqCode}\n"@\n\n$setContent = @"\n${setContent}\n"@\n\n$iniContent = @"\n${iniContent}\n"@\n\n# Path Detection\n$mt5Path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"\nif (-not (Test-Path $mt5Path)) {\n    $search = Get-Process "terminal64" -ErrorAction SilentlyContinue\n    if ($search) { $mt5Path = $search.MainModule.FileName }\n}\n\nWrite-Host "--- EA Labo Auto Setup ---" -ForegroundColor Cyan\n$dataDir = "$env:APPDATA\\MetaQuotes\\Terminal"\nif (Test-Path $dataDir) {\n    $instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1\n    if ($instance) {\n        $expertDir = Join-Path $instance.FullName "MQL5\\\\Experts"\n        if (Test-Path $expertDir) {\n            Set-Content -Path (Join-Path $expertDir "${baseName}.mq5") -Value $mqlCode -Encoding UTF8\n            Set-Content -Path (Join-Path $expertDir "Params_${eaState.eaName}.set") -Value $setContent -Encoding UTF8\n            Set-Content -Path (Join-Path $expertDir "${iniName}") -Value $iniContent -Encoding UTF8\n            Start-Process $mt5Path -ArgumentList "/config:\`"$expertDir\\\\${iniName}\`""\n            Exit\n        }\n    }\n}\nWrite-Host "笞・・閾ｪ蜍墓､懷・縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲ゅ％縺ｮ繧ｹ繧ｯ繝ｪ繝励ヨ繧・MQL5\\\\Experts 繝輔か繝ｫ繝縺ｫ遘ｻ蜍輔＠縺ｦ螳溯｡後＠縺ｦ縺上□縺輔＞縲・ -ForegroundColor Red\nPause`;
+    const psScript = `# EA Labo - MT5 One-Click Auto Runner\n$ErrorActionPreference = "Stop"\n\n$eaName = "${eaState.eaName}"\n$mqlCode = @"\n${mqCode}\n"@\n\n$setContent = @"\n${setContent}\n"@\n\n$iniContent = @"\n${iniContent}\n"@\n\n# 1. MT5 Path Detection\n$mt5Path = "C:\\\\Program Files\\\\MetaTrader 5\\\\terminal64.exe"\nif (-not (Test-Path $mt5Path)) {\n    Write-Host "MT5 terminal not found at $mt5Path. Searching..." -ForegroundColor Yellow\n    $search = Get-Process "terminal64" -ErrorAction SilentlyContinue\n    if ($search) { $mt5Path = $search.MainModule.FileName }\n    else {\n        $mt5Path = Read-Host "MT5 (terminal64.exe) 縺ｮ繝代せ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縲ゅヱ繧ｹ繧貞・蜉帙＠縺ｦ縺上□縺輔＞"\n    }\n}\n\n# 2. Get Data Folder\nWrite-Host "--- EA Labo Auto Setup ---" -ForegroundColor Cyan\n\n$dataDir = "$env:APPDATA\\\\MetaQuotes\\\\Terminal"\nif (Test-Path $dataDir) {\n    $instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1\n    if ($instance) {\n        $expertDir = Join-Path $instance.FullName "MQL5\\\\Experts"\n        if (Test-Path $expertDir) {\n            Write-Host "Setting up in: $expertDir" -ForegroundColor Green\n            \n            # Write Files\n            Set-Content -Path (Join-Path $expertDir "${baseName}.mq5") -Value $mqlCode -Encoding UTF8\n            Set-Content -Path (Join-Path $expertDir "Params_${eaState.eaName}.set") -Value $setContent -Encoding UTF8\n            Set-Content -Path (Join-Path $expertDir "${iniName}") -Value $iniContent -Encoding UTF8\n            \n            # Start MT5\n            Write-Host "Starting MT5 Backtest..." -ForegroundColor Green\n            Start-Process $mt5Path -ArgumentList "/config:\`"$expertDir\\\\${iniName}\`""\n            Exit\n        }\n    }\n}\n\nWrite-Host "笞・・閾ｪ蜍墓､懷・縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲ゅ％縺ｮ繧ｹ繧ｯ繝ｪ繝励ヨ繧・MQL5\\\\Experts 繝輔か繝ｫ繝縺ｫ遘ｻ蜍輔＠縺ｦ螳溯｡後＠縺ｦ縺上□縺輔＞縲・ -ForegroundColor Red\nSet-Content -Path "${baseName}.mq5" -Value $mqlCode -Encoding UTF8\nSet-Content -Path "Params_${eaState.eaName}.set" -Value $setContent -Encoding UTF8\nSet-Content -Path "${iniName}" -Value $iniContent -Encoding UTF8\nPause`;
 
-        downloadFile("噫Run_MT5_Test_" + eaState.eaName + ".ps1", psScript);
-        showToast('蜈ｨ閾ｪ蜍募ｮ溯｡檎畑繧ｹ繧ｯ繝ｪ繝励ヨ繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺励◆', 'success');
-    } catch (error) {
-        alert('繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆: ' + error.message);
-    }
+    downloadFile(`噫Run_MT5_Test_${eaState.eaName}.ps1`, psScript);
+    console.log('One-Click PS1 script triggered.');
+    showToast('蜈ｨ閾ｪ蜍募ｮ溯｡檎畑繧ｹ繧ｯ繝ｪ繝励ヨ繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝峨＠縺ｾ縺励◆', 'success');
+} catch (error) {
+    console.error('One-Click Runner Error:', error);
+    alert('繝ｯ繝ｳ繧ｯ繝ｪ繝・け螳溯｡御ｸｭ縺ｫ繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｾ縺励◆: ' + error.message + '\n險ｭ螳壼・螳ｹ繧堤｢ｺ隱阪＠縺ｦ縺上□縺輔＞縲・);
+}
 }
 
