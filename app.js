@@ -4962,70 +4962,92 @@ function runOneClickMT5() {
         const iniContent = generateIniFile(baseName + '.ex5') + "\nShutdownTerminal=1\nReport=" + baseName + "_Report\nReplaceReport=1\n";
         const iniName = "AutoRun_" + eaState.eaName + ".ini";
 
-        // Hybrid Batch script that embeds PowerShell logic
-        const batScript = `@echo off
+        // Polyglot Hybrid script (.bat + .ps1 in one file)
+        const batScript = `<# :
+@echo off
 setlocal
 echo ============================================================
-echo   EA Labo MT5 Cloud-to-Local Bridge (v5.0.0)
+echo   EA Labo MT5 Cloud-to-Local Bridge (v5.1.0)
 echo ============================================================
 echo.
 echo [1/3] MT5のパスを検索中...
-
-powershell -ExecutionPolicy Bypass -Command "$eaName='` + eaState.eaName + `'; $baseName='` + baseName + `'; $mqCode=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(mqCode))) + `')); $setContent=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(setContent))) + `')); $iniContent=[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(iniContent))) + `')); $iniName='` + iniName + `'; $targetUrl='` + window.location.href.split('?')[0] + `'; @'
-    # 1. ターミナルのパス特定
-    $mt5Path = 'C:\\Program Files\\MetaTrader 5\\terminal64.exe'
-    if (-not (Test-Path $mt5Path)) {
-        $search = Get-Process 'terminal64' -ErrorAction SilentlyContinue
-        if ($search) { $mt5Path = $search.MainModule.FileName }
-        else {
-            $regPath = Get-ItemProperty 'HKCU:\\Software\\MetaQuotes\\WebInstall\\MT5' -Name 'InstallPath' -ErrorAction SilentlyContinue
-            if ($regPath) { $mt5Path = Join-Path $regPath.InstallPath 'terminal64.exe' }
-        }
-    }
-
-    if (-not (Test-Path $mt5Path)) {
-        Write-Host '❌ MT5が見つかりません。デフォルトパスにインストールされているか確認してください。' -ForegroundColor Red
-        Pause; Exit
-    }
-
-    # 2. データフォルダの特定
-    $dataDir = '$env:APPDATA\\MetaQuotes\\Terminal'
-    $instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $instance) { Write-Host '❌ データフォルダが見つかりません。' -ForegroundColor Red; Pause; Exit }
-
-    $expertDir = Join-Path $instance.FullName 'MQL5\\Experts'
-    $reportPath = Join-Path $expertDir ($baseName + '_Report.xml')
-
-    # 3. ファイル配置
-    Write-Host '[2/3] 戦略ファイルを配置中...' -ForegroundColor Cyan
-    Set-Content -Path (Join-Path $expertDir ($baseName + '.mq5')) -Value $mqCode -Encoding UTF8
-    Set-Content -Path (Join-Path $expertDir ('Params_' + $eaName + '.set')) -Value $setContent -Encoding UTF8
-    Set-Content -Path (Join-Path $expertDir $iniName) -Value $iniContent -Encoding UTF8
-
-    # 4. 実行と待機
-    Write-Host '[3/3] MT5を起動しバックテストを開始します...' -ForegroundColor Green
-    $process = Start-Process $mt5Path -ArgumentList '/config:\"' + (Join-Path $expertDir $iniName) + '\"' -PassThru -Wait
-
-    # 5. レポート解析とブラウザ返却
-    if (Test-Path $reportPath) {
-        Write-Host '📊 テスト完了！結果をツールに送信します...' -ForegroundColor Yellow
-        $xml = [xml](Get-Content $reportPath)
-        $profit = $xml.Report.Stats.Profit | Out-String; if(!$profit){$profit='0'}
-        $winRate = $xml.Report.Stats.WinRate | Out-String; if(!$winRate){$winRate='50%'}
-        $json = \"{\\\"profit\\\":$($profit.Trim()), \\\"winRate\\\":\\\"$($winRate.Trim())\\\", \\\"pf\\\":\\\"1.5\\\", \\\"drawdown\\\":\\\"5.0%\\\"}\"
-        $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($json))
-        Start-Process ($targetUrl + '?report_data=' + $base64)
-    } else {
-         Write-Host '⚠️ レポートが生成されませんでした。MT5の設定を確認してください。' -ForegroundColor Yellow
-         Pause
-    }
-'@ | Invoke-Expression"
-
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Content '%~f0' | Out-String | Invoke-Expression"
 echo.
 echo ============================================================
-echo   Test Script Generated Successfully.
+echo   Test Script Finished.
 echo ============================================================
-pause`;
+pause
+goto :EOF
+#>
+
+# --- PowerShell Logic (Executed via Polyglot Bridge) ---
+$ErrorActionPreference = "Stop"
+
+$eaName = "` + eaState.eaName + `"
+$baseName = "` + baseName + `"
+$targetUrl = "` + window.location.href.split('?')[0] + `"
+
+# Safe string recovery from Base64
+$mqCode = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(mqCode))) + `'))
+$setContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(setContent))) + `'))
+$iniContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(iniContent))) + `'))
+$iniName = "` + iniName + `"
+
+# 1. MT5 Path Detection
+$mt5Path = 'C:\\Program Files\\MetaTrader 5\\terminal64.exe'
+if (-not (Test-Path $mt5Path)) {
+    $search = Get-Process 'terminal64' -ErrorAction SilentlyContinue
+    if ($search) { $mt5Path = $search.MainModule.FileName }
+    else {
+        $regPath = Get-ItemProperty 'HKCU:\\Software\\MetaQuotes\\WebInstall\\MT5' -Name 'InstallPath' -ErrorAction SilentlyContinue
+        if ($regPath) { $mt5Path = Join-Path $regPath.InstallPath 'terminal64.exe' }
+    }
+}
+
+if (-not (Test-Path $mt5Path)) {
+    Write-Host '❌ MT5が見つかりません。デフォルトパスにインストールされているか確認してください。' -ForegroundColor Red
+    return
+}
+
+# 2. Data Folder Detection
+$dataDir = "$env:APPDATA\\MetaQuotes\\Terminal"
+if (-not (Test-Path $dataDir)) {
+    Write-Host '❌ MT5のデータフォルダが見つかりません。' -ForegroundColor Red
+    return
+}
+
+$instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not $instance) {
+    Write-Host '❌ MT5のインスタンスが見つかりません。' -ForegroundColor Red
+    return
+}
+
+$expertDir = Join-Path $instance.FullName 'MQL5\\Experts'
+$reportPath = Join-Path $expertDir ($baseName + '_Report.xml')
+
+# 3. File Deployment
+Write-Host '[2/3] 戦略ファイルを配置中...' -ForegroundColor Cyan
+Set-Content -Path (Join-Path $expertDir ($baseName + '.mq5')) -Value $mqCode -Encoding UTF8
+Set-Content -Path (Join-Path $expertDir ('Params_' + $eaName + '.set')) -Value $setContent -Encoding UTF8
+Set-Content -Path (Join-Path $expertDir $iniName) -Value $iniContent -Encoding UTF8
+
+# 4. Execution
+Write-Host "[3/3] MT5を起動しバックテストを開始します..." -ForegroundColor Green
+Start-Process $mt5Path -ArgumentList "/config:\`"$(Join-Path $expertDir $iniName)\`"" -PassThru -Wait
+
+# 5. Report Bridge
+if (Test-Path $reportPath) {
+    Write-Host '📊 テスト完了！結果をツールに送信します...' -ForegroundColor Yellow
+    $xml = [xml](Get-Content $reportPath)
+    $profit = ($xml.Report.Stats.Profit | Out-String).Trim(); if(!$profit){$profit='0'}
+    $winRate = ($xml.Report.Stats.WinRate | Out-String).Trim(); if(!$winRate){$winRate='50%'}
+    $json = "{\`"profit\`":$profit, \`"winRate\`":\`"$winRate\`", \`"pf\`":\`"1.5\`", \`"drawdown\`":\`"5.0%\`"}"
+    $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($json))
+    Start-Process ($targetUrl + '?report_data=' + $base64)
+} else {
+     Write-Host '⚠️ レポートが生成されませんでした。MT5の設定を確認してください。' -ForegroundColor Yellow
+}
+`;
 
         downloadFile("🚀OneClick_Test_" + eaState.eaName + ".bat", batScript);
         showToast('バッチファイルをダウンロードしました。実行してください。', 'success');
