@@ -4941,11 +4941,11 @@ function generateIniFile(expertName) {
 }
 
 /**
- * One-Click Runner: Polyglot v5.3.0 (Strict Path Validation)
+ * One-Click Runner: Polyglot v5.4.0 (Multiple Instance Safe)
  */
 function runOneClickMT5() {
     try {
-        console.log('Preparing One-Click Runner v5.3.0...');
+        console.log('Preparing One-Click Runner v5.4.0 (Scalar Fix)...');
         const manualExePath = document.getElementById('mt-terminal-path')?.value?.trim();
         const manualDataPath = document.getElementById('mt-data-path')?.value?.trim();
         
@@ -4956,12 +4956,12 @@ function runOneClickMT5() {
         const iniContent = generateIniFile(baseName + '.ex5') + "\nShutdownTerminal=1\nReport=" + baseName + "_Report\nReplaceReport=1\n";
         const iniName = "AutoRun_" + eaState.eaName + ".ini";
 
-        // Polyglot Hybrid script (Strict ASCII Batch + UTF8 PowerShell)
+        // Polyglot Hybrid script (Scalar Fix)
         const batScript = `<# :
 @echo off
 setlocal
 echo ============================================================
-echo   EA Labo MT5 Cloud-to-Local Bridge (v5.3.0)
+echo   EA Labo MT5 Cloud-to-Local Bridge (v5.4.0)
 echo ============================================================
 echo.
 echo [1/3] Searching for MetaTrader...
@@ -4989,15 +4989,16 @@ $setContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase6
 $iniContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(iniContent))) + `'))
 $iniName = "` + iniName + `"
 
-# 1. MT5 Terminal Path Detection
+# 1. MT5 Terminal Path Detection (Scalar Fix - Pick First)
 $mt5Path = $manualExePath
 if (-not $mt5Path -or -not (Test-Path $mt5Path)) {
     $mt5Path = 'C:\\Program Files\\MetaTrader 5\\terminal64.exe'
     if (-not (Test-Path $mt5Path)) {
-        $search = Get-Process 'terminal64' -ErrorAction SilentlyContinue
-        if ($search) { $mt5Path = $search.MainModule.FileName }
+        # Select-Object -First 1 is CRITICAL to prevent Array errors
+        $process = Get-Process 'terminal64' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($process) { $mt5Path = $process.MainModule.FileName }
         else {
-            $regPath = Get-ItemProperty 'HKCU:\\Software\\MetaQuotes\\WebInstall\\MT5' -Name 'InstallPath' -ErrorAction SilentlyContinue
+            $regPath = Get-ItemProperty 'HKCU:\\Software\\MetaQuotes\\WebInstall\\MT5' -Name 'InstallPath' -ErrorAction SilentlyContinue | Select-Object -First 1
             if ($regPath) { $mt5Path = Join-Path $regPath.InstallPath 'terminal64.exe' }
         }
     }
@@ -5008,18 +5009,17 @@ if (-not (Test-Path $mt5Path)) {
     return
 }
 
-# 2. Data Folder Detection
+# 2. Data Folder Detection (Scalar Fix - Pick First)
 $instancePath = $manualDataPath
 if (-not $instancePath -or -not (Test-Path (Join-Path $instancePath 'MQL5\\Experts'))) {
     $dataRootDir = "$env:APPDATA\\MetaQuotes\\Terminal"
     if (Test-Path $dataRootDir) {
-        # Filter for Terminal Hashes (32 hex characters) and check content
         $validInstances = Get-ChildItem $dataRootDir | Where-Object { 
             $_.PSIsContainer -and $_.Name -match "^[0-9A-F]{32}$" -and (Test-Path (Join-Path $_.FullName 'MQL5\\Experts'))
-        } | Sort-Object LastWriteTime -Descending
+        } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         
         if ($validInstances) {
-            $instancePath = $validInstances[0].FullName
+            $instancePath = $validInstances.FullName
         }
     }
 }
@@ -5038,9 +5038,9 @@ Set-Content -Path (Join-Path $expertDir ($baseName + '.mq5')) -Value $mqCode -En
 Set-Content -Path (Join-Path $expertDir ('Params_' + $eaName + '.set')) -Value $setContent -Encoding UTF8
 Set-Content -Path (Join-Path $expertDir $iniName) -Value $iniContent -Encoding UTF8
 
-# 4. Execution
+# 4. Execution (Quoted FilePath)
 Write-Host "[3/3] Launching MT5 for Backtest..." -ForegroundColor Green
-Start-Process $mt5Path -ArgumentList "/config:\`"$(Join-Path $expertDir $iniName)\`"" -PassThru -Wait
+Start-Process -FilePath \"$mt5Path\" -ArgumentList \"/config:$(Join-Path $expertDir $iniName)\" -PassThru -Wait
 
 # 5. Report Bridge
 if (Test-Path $reportPath) {
