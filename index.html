@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EA Labo - MT4/MT5 EA & Indicator Generator</title>
-    <link rel="stylesheet" href="style.css?v=202604071630">
+    <link rel="stylesheet" href="style.css?v=202604080931">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,7 +14,7 @@
 
         <!-- ==================== H-010: Header + Home Screen ==================== -->
         <header class="header">
-            <div class="header-title-row"><h1>EA Labo</h1><span id="app-version" class="version-tag">Build: 2026.04.07.1630</span></div>
+            <div class="header-title-row"><h1>EA Labo</h1><span id="app-version" class="version-tag">Build: 2026.04.08.0931</span></div>
             <p>ノーコードでMT4/MT5のEA・インジケーターを作成</p>
         </header>
 
@@ -1247,6 +1247,11 @@
                                 <input type="date" id="mt-to-date" class="form-input" value="2024-12-31">
                             </div>
                         </div>
+                        <div class="form-group mt-3">
+                            <label class="form-label" style="color: var(--accent-primary); font-weight: bold;">MT5 ターミナルパス (任意)</label>
+                            <input type="text" id="mt-terminal-path" class="form-input" placeholder="例: C:\Program Files\MetaTrader 5\terminal64.exe">
+                            <p class="form-hint">自動検知に失敗する場合、ターミナル実行ファイル (.exe) のフルパスを入力してください。</p>
+                        </div>
                         
                         <div class="mt-actions mt-4 text-center">
                             <h4 class="mb-3" style="color: var(--accent-success);">🚀 ワンボタン全自動テスト</h4>
@@ -1711,10 +1716,11 @@
     </div>
     <!-- //END H-110 -->
 
-    <script src="generator.js?v=202604071630"></script>
-    <script src="app.js?v=202604071630"></script>
+    <script src="generator.js?v=202604080931"></script>
+    <script src="app.js?v=202604080931"></script>
 </body>
 </html>
+
 
 
 

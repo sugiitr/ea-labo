@@ -4631,7 +4631,7 @@ window.showBacktestReport = function(indexOrData) {
     
     if (!h) return;
 
-    // モーダルの値をセット
+    // モーダルの値をセット (主要統計のみ)
     const setVal = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.textContent = val;
@@ -4642,17 +4642,10 @@ window.showBacktestReport = function(indexOrData) {
     setVal('report-pf', h.pf || '---');
     setVal('report-drawdown', h.drawdown || '---');
     
-    // 履歴テーブルの更新
+    // 取引履歴テーブルを一旦クリアまたは非表示にする（ボスの要望：簡略化）
     const historyBody = document.getElementById('report-history-body');
-    if (historyBody && h.trades) {
-        historyBody.innerHTML = h.trades.map(t => `
-            <tr>
-                <td>${t.time || '---'}</td>
-                <td class="${t.type === 'buy' ? 'text-buy' : 'text-sell'}">${t.type.toUpperCase()}</td>
-                <td>${t.lots}</td>
-                <td>${t.profit.toLocaleString()}</td>
-            </tr>
-        `).join('');
+    if (historyBody) {
+        historyBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">詳細はMT5側のレポートでご確認ください</td></tr>';
     }
 
     const modal = document.getElementById('backtest-report-modal');
@@ -4948,77 +4941,76 @@ function generateIniFile(expertName) {
 }
 
 /**
- * One-Click Runner: Hybrid .bat/.ps1 version (v5.0.0)
- * Fixed MT5 Launch, Execution, and Auto-Reporting.
+ * One-Click Runner: Polyglot v5.2.0 (CMD Encoding Safe + Manual Path)
  */
 function runOneClickMT5() {
     try {
-        console.log('Preparing One-Click Hybrid Runner...');
+        console.log('Preparing One-Click Runner v5.2.0...');
+        const manualPath = document.getElementById('mt-terminal-path')?.value?.trim();
+        
         eaState.platform = eaState.mtPlatform || 'mt5';
-
         const baseName = "01_Source_" + eaState.eaName;
         const mqCode = EAGenerator.generate(eaState);
         const setContent = generateSetFile();
         const iniContent = generateIniFile(baseName + '.ex5') + "\nShutdownTerminal=1\nReport=" + baseName + "_Report\nReplaceReport=1\n";
         const iniName = "AutoRun_" + eaState.eaName + ".ini";
 
-        // Polyglot Hybrid script (.bat + .ps1 in one file)
+        // Polyglot Hybrid script (Strict ASCII Batch + UTF8 PowerShell)
         const batScript = `<# :
 @echo off
 setlocal
 echo ============================================================
-echo   EA Labo MT5 Cloud-to-Local Bridge (v5.1.0)
+echo   EA Labo MT5 Cloud-to-Local Bridge (v5.2.0)
 echo ============================================================
 echo.
-echo [1/3] MT5のパスを検索中...
+echo [1/3] Searching for MetaTrader...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Content '%~f0' | Out-String | Invoke-Expression"
 echo.
 echo ============================================================
-echo   Test Script Finished.
+echo   Task Finished.
 echo ============================================================
 pause
 goto :EOF
 #>
 
-# --- PowerShell Logic (Executed via Polyglot Bridge) ---
+# --- PowerShell Logic ---
 $ErrorActionPreference = "Stop"
 
 $eaName = "` + eaState.eaName + `"
 $baseName = "` + baseName + `"
 $targetUrl = "` + window.location.href.split('?')[0] + `"
+$manualPath = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(manualPath || ''))) + `'))
 
-# Safe string recovery from Base64
+# Safe strings
 $mqCode = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(mqCode))) + `'))
 $setContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(setContent))) + `'))
 $iniContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(iniContent))) + `'))
 $iniName = "` + iniName + `"
 
 # 1. MT5 Path Detection
-$mt5Path = 'C:\\Program Files\\MetaTrader 5\\terminal64.exe'
-if (-not (Test-Path $mt5Path)) {
-    $search = Get-Process 'terminal64' -ErrorAction SilentlyContinue
-    if ($search) { $mt5Path = $search.MainModule.FileName }
-    else {
-        $regPath = Get-ItemProperty 'HKCU:\\Software\\MetaQuotes\\WebInstall\\MT5' -Name 'InstallPath' -ErrorAction SilentlyContinue
-        if ($regPath) { $mt5Path = Join-Path $regPath.InstallPath 'terminal64.exe' }
+$mt5Path = $manualPath
+if (-not $mt5Path -or -not (Test-Path $mt5Path)) {
+    $mt5Path = 'C:\\Program Files\\MetaTrader 5\\terminal64.exe'
+    if (-not (Test-Path $mt5Path)) {
+        $search = Get-Process 'terminal64' -ErrorAction SilentlyContinue
+        if ($search) { $mt5Path = $search.MainModule.FileName }
+        else {
+            $regPath = Get-ItemProperty 'HKCU:\\Software\\MetaQuotes\\WebInstall\\MT5' -Name 'InstallPath' -ErrorAction SilentlyContinue
+            if ($regPath) { $mt5Path = Join-Path $regPath.InstallPath 'terminal64.exe' }
+        }
     }
 }
 
 if (-not (Test-Path $mt5Path)) {
-    Write-Host '❌ MT5が見つかりません。デフォルトパスにインストールされているか確認してください。' -ForegroundColor Red
+    Write-Host '❌ Error: Terminal64.exe not found. Please specify the path in EA-Labo.' -ForegroundColor Red
     return
 }
 
 # 2. Data Folder Detection
 $dataDir = "$env:APPDATA\\MetaQuotes\\Terminal"
-if (-not (Test-Path $dataDir)) {
-    Write-Host '❌ MT5のデータフォルダが見つかりません。' -ForegroundColor Red
-    return
-}
-
 $instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if (-not $instance) {
-    Write-Host '❌ MT5のインスタンスが見つかりません。' -ForegroundColor Red
+    Write-Host '❌ Error: Data folder not found.' -ForegroundColor Red
     return
 }
 
@@ -5026,31 +5018,35 @@ $expertDir = Join-Path $instance.FullName 'MQL5\\Experts'
 $reportPath = Join-Path $expertDir ($baseName + '_Report.xml')
 
 # 3. File Deployment
-Write-Host '[2/3] 戦略ファイルを配置中...' -ForegroundColor Cyan
+Write-Host '[2/3] Deploying files to Experts folder...' -ForegroundColor Cyan
 Set-Content -Path (Join-Path $expertDir ($baseName + '.mq5')) -Value $mqCode -Encoding UTF8
 Set-Content -Path (Join-Path $expertDir ('Params_' + $eaName + '.set')) -Value $setContent -Encoding UTF8
 Set-Content -Path (Join-Path $expertDir $iniName) -Value $iniContent -Encoding UTF8
 
 # 4. Execution
-Write-Host "[3/3] MT5を起動しバックテストを開始します..." -ForegroundColor Green
+Write-Host "[3/3] Launching MT5 for Backtest..." -ForegroundColor Green
 Start-Process $mt5Path -ArgumentList "/config:\`"$(Join-Path $expertDir $iniName)\`"" -PassThru -Wait
 
 # 5. Report Bridge
 if (Test-Path $reportPath) {
-    Write-Host '📊 テスト完了！結果をツールに送信します...' -ForegroundColor Yellow
+    Write-Host '📊 Success! Sending results back to EA-Labo...' -ForegroundColor Yellow
     $xml = [xml](Get-Content $reportPath)
-    $profit = ($xml.Report.Stats.Profit | Out-String).Trim(); if(!$profit){$profit='0'}
-    $winRate = ($xml.Report.Stats.WinRate | Out-String).Trim(); if(!$winRate){$winRate='50%'}
-    $json = "{\`"profit\`":$profit, \`"winRate\`":\`"$winRate\`", \`"pf\`":\`"1.5\`", \`"drawdown\`":\`"5.0%\`"}"
+    $stats = $xml.Report.Stats
+    $profit = ($stats.Profit | Out-String).Trim(); if(!$profit){$profit='0'}
+    $winRate = ($stats.WinRate | Out-String).Trim(); if(!$winRate){$winRate='50%'}
+    $pf = ($stats.ProfitFactor | Out-String).Trim(); if(!$pf){$pf='1.0'}
+    $drawdown = ($stats.MaxDrawdown | Out-String).Trim(); if(!$drawdown){$drawdown='0%'}
+
+    $json = "{\`"profit\`":$profit, \`"winRate\`":\`"$winRate\`", \`"pf\`":\`"$pf\`", \`"drawdown\`":\`"$drawdown\`"}"
     $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($json))
     Start-Process ($targetUrl + '?report_data=' + $base64)
 } else {
-     Write-Host '⚠️ レポートが生成されませんでした。MT5の設定を確認してください。' -ForegroundColor Yellow
+     Write-Host '⚠️ Warning: Report XML was not generated.' -ForegroundColor Yellow
 }
 `;
 
         downloadFile("🚀OneClick_Test_" + eaState.eaName + ".bat", batScript);
-        showToast('バッチファイルをダウンロードしました。実行してください。', 'success');
+        showToast('バッチファイルをダウンロードしました。', 'success');
     } catch (error) {
         alert('エラーが発生しました: ' + error.message);
     }
@@ -5061,4 +5057,5 @@ setTimeout(() => {
     const btn = document.getElementById('run-one-click-mt5');
     if (btn) btn.onclick = runOneClickMT5;
 }, 1000);
+
 
