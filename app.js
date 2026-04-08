@@ -4941,12 +4941,13 @@ function generateIniFile(expertName) {
 }
 
 /**
- * One-Click Runner: Polyglot v5.2.0 (CMD Encoding Safe + Manual Path)
+ * One-Click Runner: Polyglot v5.3.0 (Strict Path Validation)
  */
 function runOneClickMT5() {
     try {
-        console.log('Preparing One-Click Runner v5.2.0...');
-        const manualPath = document.getElementById('mt-terminal-path')?.value?.trim();
+        console.log('Preparing One-Click Runner v5.3.0...');
+        const manualExePath = document.getElementById('mt-terminal-path')?.value?.trim();
+        const manualDataPath = document.getElementById('mt-data-path')?.value?.trim();
         
         eaState.platform = eaState.mtPlatform || 'mt5';
         const baseName = "01_Source_" + eaState.eaName;
@@ -4960,7 +4961,7 @@ function runOneClickMT5() {
 @echo off
 setlocal
 echo ============================================================
-echo   EA Labo MT5 Cloud-to-Local Bridge (v5.2.0)
+echo   EA Labo MT5 Cloud-to-Local Bridge (v5.3.0)
 echo ============================================================
 echo.
 echo [1/3] Searching for MetaTrader...
@@ -4979,7 +4980,8 @@ $ErrorActionPreference = "Stop"
 $eaName = "` + eaState.eaName + `"
 $baseName = "` + baseName + `"
 $targetUrl = "` + window.location.href.split('?')[0] + `"
-$manualPath = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(manualPath || ''))) + `'))
+$manualExePath = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(manualExePath || ''))) + `'))
+$manualDataPath = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(manualDataPath || ''))) + `'))
 
 # Safe strings
 $mqCode = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(mqCode))) + `'))
@@ -4987,8 +4989,8 @@ $setContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase6
 $iniContent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('` + btoa(unescape(encodeURIComponent(iniContent))) + `'))
 $iniName = "` + iniName + `"
 
-# 1. MT5 Path Detection
-$mt5Path = $manualPath
+# 1. MT5 Terminal Path Detection
+$mt5Path = $manualExePath
 if (-not $mt5Path -or -not (Test-Path $mt5Path)) {
     $mt5Path = 'C:\\Program Files\\MetaTrader 5\\terminal64.exe'
     if (-not (Test-Path $mt5Path)) {
@@ -5002,23 +5004,36 @@ if (-not $mt5Path -or -not (Test-Path $mt5Path)) {
 }
 
 if (-not (Test-Path $mt5Path)) {
-    Write-Host '❌ Error: Terminal64.exe not found. Please specify the path in EA-Labo.' -ForegroundColor Red
+    Write-Host '❌ Error: Terminal64.exe not found.' -ForegroundColor Red
     return
 }
 
 # 2. Data Folder Detection
-$dataDir = "$env:APPDATA\\MetaQuotes\\Terminal"
-$instance = Get-ChildItem $dataDir | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-if (-not $instance) {
-    Write-Host '❌ Error: Data folder not found.' -ForegroundColor Red
+$instancePath = $manualDataPath
+if (-not $instancePath -or -not (Test-Path (Join-Path $instancePath 'MQL5\\Experts'))) {
+    $dataRootDir = "$env:APPDATA\\MetaQuotes\\Terminal"
+    if (Test-Path $dataRootDir) {
+        # Filter for Terminal Hashes (32 hex characters) and check content
+        $validInstances = Get-ChildItem $dataRootDir | Where-Object { 
+            $_.PSIsContainer -and $_.Name -match "^[0-9A-F]{32}$" -and (Test-Path (Join-Path $_.FullName 'MQL5\\Experts'))
+        } | Sort-Object LastWriteTime -Descending
+        
+        if ($validInstances) {
+            $instancePath = $validInstances[0].FullName
+        }
+    }
+}
+
+if (-not $instancePath -or -not (Test-Path $instancePath)) {
+    Write-Host '❌ Error: Valid MT5 data folder not found.' -ForegroundColor Red
     return
 }
 
-$expertDir = Join-Path $instance.FullName 'MQL5\\Experts'
+$expertDir = Join-Path $instancePath 'MQL5\\Experts'
 $reportPath = Join-Path $expertDir ($baseName + '_Report.xml')
 
 # 3. File Deployment
-Write-Host '[2/3] Deploying files to Experts folder...' -ForegroundColor Cyan
+Write-Host "[2/3] Deploying files to: $expertDir" -ForegroundColor Cyan
 Set-Content -Path (Join-Path $expertDir ($baseName + '.mq5')) -Value $mqCode -Encoding UTF8
 Set-Content -Path (Join-Path $expertDir ('Params_' + $eaName + '.set')) -Value $setContent -Encoding UTF8
 Set-Content -Path (Join-Path $expertDir $iniName) -Value $iniContent -Encoding UTF8
