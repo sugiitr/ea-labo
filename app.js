@@ -48,7 +48,7 @@ function initAuth() {
 const eaState = {
   // --- 基本設定 ---
   eaName: 'MyEA',
-  platform: 'mt4',
+  platform: 'mt5',
   magicNumber: 12345,
   lotSize: 0.01,
   riskPercent: 0,
