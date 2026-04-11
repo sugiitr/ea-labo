@@ -265,6 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEAFlow();
         setupIndicatorFlow();
         setupGallery(); // ギャラリーの初期化を追加
+        renderStep0Gallery(); // Step0にギャラリーを表示
         setupModals();
         setupBacktest();
         setupMTSettings(); // Initialize MT integration
@@ -784,10 +785,12 @@ function setupStep2() {
     sellCombineSelect.onchange = (e) => eaState.sellCombine = e.target.value.toUpperCase();
   }
 
-  const noPositionChk = document.getElementById('chk-entry-no-position');
-  if (noPositionChk) {
-    noPositionChk.checked = eaState.entryNoPosition || false;
-    noPositionChk.addEventListener('change', (e) => { eaState.entryNoPosition = e.target.checked; });
+  // chk-entry-no-position is handled by setupToggleCards() as a toggle-card
+  const noPositionCard = document.getElementById('card-entry-no-position');
+  if (noPositionCard && eaState.entryNoPosition) {
+    noPositionCard.classList.add('active');
+    const cb = document.getElementById('chk-entry-no-position');
+    if (cb) cb.checked = true;
   }
 
   const addBuyBtn = document.getElementById('add-buy-condition');
@@ -1579,6 +1582,7 @@ function applyStateToUI() {
   // --- Step 2: エントリー条件 ---
   setVal('timeframe', eaState.timeframe);
   setVal('condition-combine', eaState.buyCombine);
+  setChk('chk-entry-no-position', eaState.entryNoPosition || false);
   updateConditionList('buy');
   updateConditionList('sell');
 
@@ -2282,6 +2286,30 @@ function getIndicatorConditions(indicator) {
         { id: 'cross_up_618',    label: '価格が61.8%を上抜け' },
         { id: 'cross_down_618',  label: '価格が61.8%を下抜け' }
       ];
+    case 'ma_deviation':
+      return [
+        { id: 'deviation_above', label: '価格がMAより上に乖離している（上乖離）' },
+        { id: 'deviation_below', label: '価格がMAより下に乖離している（下乖離）' },
+        { id: 'deviation_cross_up', label: '上乖離が発生した（乖離率を上抜け）' },
+        { id: 'deviation_cross_down', label: '下乖離が発生した（乖離率を下抜け）' },
+        { id: 'deviation_return', label: '乖離から戻った（乖離率が縮小）' }
+      ];
+    case 'heiken_ashi':
+      return [
+        { id: 'turn_bullish', label: '陰転→陽転（平均足が陰から陽に切り替わった）' },
+        { id: 'turn_bearish', label: '陽転→陰転（平均足が陽から陰に切り替わった）' },
+        { id: 'is_bullish', label: '平均足が陽線継続中' },
+        { id: 'is_bearish', label: '平均足が陰線継続中' }
+      ];
+    case 'round_numbers':
+      return [
+        { id: 'touch_00',  label: '.00 にタッチ（x.000 の節目に接近）' },
+        { id: 'touch_50',  label: '.50 にタッチ（x.500 の節目に接近）' },
+        { id: 'touch_any', label: '.00 または .50 にタッチ' },
+        { id: 'cross_00',  label: '.00 を通過（x.000 ラインをブレイク）' },
+        { id: 'cross_50',  label: '.50 を通過（x.500 ラインをブレイク）' },
+        { id: 'cross_any', label: '.00 または .50 を通過' }
+      ];
     default:
       return [];
   }
@@ -2492,9 +2520,7 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'heiken_ashi':
-        params.push({ id: 'ha_dummy', label: '平均足設定', type: 'select', default: '0', 
-          options: [{ value: '0', label: '標準 (iCustom)' }] 
-        });
+        params.push({ id: 'ha_wait_bars', label: '切り替わりから待つ本数 (0=切り替わった足で即判定)', type: 'number', default: 0, min: 0, max: 20 });
         break;
       case 'ma_cross':
         params.push({ id: 'ma_fast_period', label: '短期期間', type: 'number', default: 5 });
@@ -2531,15 +2557,7 @@ function getRequiredParams(category, indicator, conditionType) {
         });
         break;
       case 'round_numbers':
-        params.push({ id: 'round_dist', label: '接近pips', type: 'number', default: 5 });
-        params.push({
-          id: 'round_step', label: '節目間隔', type: 'select', default: '100',
-          options: [
-            { value: '100', label: '100 pips (.00)' },
-            { value: '50',  label: '50 pips (.50)' },
-            { value: '10',  label: '10 pips (.x0)' }
-          ]
-        });
+        params.push({ id: 'round_dist', label: '接近pips（この距離内に価格が入ったら判定）', type: 'number', default: 5, min: 1 });
         break;
       case 'holiday_filter':
         params.push({
@@ -2967,6 +2985,13 @@ function updateWizardNav() {
   const backBtn = document.getElementById('wizard-back-btn');
   const nextBtn = document.getElementById('wizard-next-btn');
   const confirmBtn = document.getElementById('wizard-confirm-btn');
+
+  // Update progress indicator
+  document.querySelectorAll('.wizard-progress .wizard-step').forEach(stepEl => {
+    const stepNum = parseInt(stepEl.dataset.step);
+    stepEl.classList.toggle('active', stepNum === wizardState.step);
+    stepEl.classList.toggle('done', stepNum < wizardState.step);
+  });
 
   if (backBtn) {
     backBtn.style.display = wizardState.step > 1 ? 'inline-block' : 'none';
@@ -3518,9 +3543,6 @@ function setupToggleCards() {
     fetchEconomicIndicators();
   });
 
-  // Set default date to today
-  const dateInput = document.getElementById('news-fetch-date');
-  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 }
 
 function syncToggleCardToState(targetId, isActive) {
@@ -3534,8 +3556,12 @@ function syncToggleCardToState(targetId, isActive) {
     'use-time-filter': () => eaState.useTimeFilter = isActive,
     'use-spread-filter': () => eaState.useSpreadFilter = isActive,
     'use-goto-filter': () => eaState.useGotoFilter = isActive,
-    'use-news-filter': () => eaState.useNewsFilter = isActive,
+    'use-news-filter': () => {
+      eaState.useNewsFilter = isActive;
+      if (isActive) { setTimeout(fetchEconomicIndicators, 100); }
+    },
     'use-month-filter': () => eaState.useMonthFilter = isActive,
+    'chk-entry-no-position': () => eaState.entryNoPosition = isActive,
     'chk-discord-webhook': () => eaState.useDiscordWebhook = isActive,
     'chk-alert-popup': () => eaState.useAlertPopup = isActive,
     'chk-alert-sound': () => eaState.useAlertSound = isActive,
@@ -3557,17 +3583,15 @@ function setToggleCardActive(cardId, active) {
 
 // ==================== A-092: Economic Indicator Fetcher ====================
 async function fetchEconomicIndicators() {
-  const dateInput = document.getElementById('news-fetch-date');
   const statusEl = document.getElementById('news-fetch-status');
   const listEl = document.getElementById('news-event-list');
 
-  if (!dateInput || !statusEl) return;
+  if (!statusEl) return;
 
-  const dateStr = dateInput.value.replace(/-/g, '');
-  if (!dateStr || dateStr.length !== 8) {
-    statusEl.textContent = '❌ 日付を選択してください';
-    return;
-  }
+  const today = new Date();
+  const dateStr = today.getFullYear().toString() +
+    String(today.getMonth() + 1).padStart(2, '0') +
+    String(today.getDate()).padStart(2, '0');
 
   const url = `https://kissfx.com/article/fxdays${dateStr}.html`;
   statusEl.textContent = '⏳ 取得中...';
@@ -4540,6 +4564,74 @@ function drawEquityChart(equityHistory) {
     ctx.stroke();
 }
 
+// ==================== [A-088] Step 0 Gallery Integration ====================
+function renderStep0Gallery() {
+  const section = document.getElementById('step0-gallery-section');
+  const grid = document.getElementById('step0-gallery-grid');
+  if (!section || !grid) return;
+
+  let gallery = JSON.parse(localStorage.getItem('ea_labo_gallery') || '[]');
+
+  // Also include static public demo entries
+  const publicItems = [
+    { id: 'pub_1', name: 'MAパーフェクトオーダー EA', author: 'EA-Master-X', date: '2026-03-01', winRate: '72%', tags: ['TREND', 'MA'] },
+    { id: 'pub_2', name: 'スキャルピング RSI型', author: 'AlgoTrading_JP', date: '2026-02-15', winRate: '85%', tags: ['SCALP', 'RSI'] },
+    { id: 'pub_3', name: 'ボリンジャー逆張り EA', author: 'CryptoQuant', date: '2026-01-20', winRate: '64%', tags: ['REVERSAL', 'BB'] }
+  ];
+
+  if (gallery.length === 0 && publicItems.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  grid.innerHTML = '';
+
+  // My gallery items
+  gallery.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'template-card';
+    card.style.cssText = 'cursor:pointer; border: 2px solid var(--accent-primary);';
+    card.innerHTML = `
+      <div class="template-icon">📁</div>
+      <div class="template-difficulty" style="color:var(--accent-primary);">マイEA</div>
+      <h3 class="template-name">${escapeHtml(item.name || 'Unnamed EA')}</h3>
+      <p class="template-detail">作成日: ${item.date}</p>
+      <div class="template-tags"><span class="t-tag">勝率: ${item.winRate || '---'}</span></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:8px;">このEAを読み込む</button>
+    `;
+    card.addEventListener('click', () => {
+      Object.assign(eaState, item.state);
+      applyStateToUI();
+      showToast('マイライブラリから読み込みました', 'success');
+      showEAStep(1);
+    });
+    grid.appendChild(card);
+  });
+
+  // Public demo items (shown only if no personal gallery or always)
+  if (gallery.length === 0) {
+    publicItems.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'template-card';
+      card.style.cssText = 'cursor:pointer; border: 2px solid var(--accent-secondary, #7c3aed);';
+      card.innerHTML = `
+        <div class="template-icon">🌍</div>
+        <div class="template-difficulty" style="color:var(--accent-secondary, #7c3aed);">パブリック</div>
+        <h3 class="template-name">${escapeHtml(item.name)}</h3>
+        <p class="template-detail">作者: ${escapeHtml(item.author)}</p>
+        <div class="template-tags">${item.tags.map(t => `<span class="t-tag">${t}</span>`).join('')}</div>
+        <p class="template-detail" style="margin-top:4px;">勝率: ${item.winRate}</p>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px;">詳細を見る (デモ)</button>
+      `;
+      card.addEventListener('click', () => {
+        showToast('パブリック戦略の読み込みはデモ用です', 'info');
+      });
+      grid.appendChild(card);
+    });
+  }
+}
+
 // ==================== [A-090] Gallery Logic ====================
 function setupGallery() {
     const addToGalleryBtn = document.getElementById('add-to-gallery');
@@ -4577,6 +4669,7 @@ function saveToGallery() {
     localStorage.setItem('ea_labo_gallery', JSON.stringify(gallery));
     showToast('ギャラリーに保存しました', 'success');
     renderGallery();
+    renderStep0Gallery();
     showEAStep(8);
 }
 

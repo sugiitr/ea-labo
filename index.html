@@ -230,6 +230,12 @@
                         <button class="btn btn-secondary btn-select-template">このテンプレートで作成</button>
                     </div>
                 </div>
+
+                <!-- Gallery Templates Section -->
+                <div id="step0-gallery-section" style="display:none; margin-top:24px;">
+                    <h3 style="margin-bottom:12px; color:var(--text-secondary);">📚 マイライブラリから読み込む</h3>
+                    <div id="step0-gallery-grid" class="template-grid"></div>
+                </div>
             </div>
 
             <!-- ==================== H-030: EA Step 1 (ポジション管理) ==================== -->
@@ -560,15 +566,14 @@
                 </div>
 
                 <!-- ポジション管理オプション -->
-                <div class="form-card" style="margin-bottom: 16px;">
-                    <h3>⚙️ エントリー制御</h3>
-                    <label class="checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                        <input type="checkbox" id="chk-entry-no-position">
-                        <span>
-                            <strong>ポジションが無ければエントリー</strong>
-                            <span class="form-hint" style="display:block; margin-top:2px;">既にポジションを保有している場合は新規エントリーしない（常時ポジション保有型に使用）</span>
-                        </span>
-                    </label>
+                <div class="toggle-card" id="card-entry-no-position" data-target="chk-entry-no-position" style="margin-bottom: 16px;">
+                    <input type="checkbox" id="chk-entry-no-position" style="display:none">
+                    <div class="toggle-card-header">
+                        <div class="toggle-card-icon">🚫</div>
+                        <div class="toggle-card-title">ポジションが無ければエントリー</div>
+                        <div class="toggle-card-status">✓</div>
+                    </div>
+                    <div class="toggle-card-desc">既にポジションを保有している場合は新規エントリーしない（常時ポジション保有型に使用）</div>
                 </div>
 
                 <div class="conditions-section">
@@ -915,12 +920,9 @@
 
                         <!-- 羊飼いデータ取得 -->
                         <div class="form-group">
-                          <label class="form-label">📡 羊飼いのFXブログから指標を取得</label>
+                          <label class="form-label">📡 経済指標の自動取得（今日分）</label>
                           <div class="form-row" style="align-items:flex-end;">
-                            <div class="form-group" style="flex:1">
-                              <input type="date" id="news-fetch-date" class="form-input">
-                            </div>
-                            <button class="btn btn-primary" id="fetch-news-btn" style="white-space:nowrap;">指標を取得</button>
+                            <button class="btn btn-primary" id="fetch-news-btn" style="white-space:nowrap;">📡 今日の指標を取得</button>
                           </div>
                           <div id="news-fetch-status" class="form-hint" style="margin-top:6px;"></div>
                         </div>
