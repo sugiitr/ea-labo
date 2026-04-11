@@ -328,10 +328,7 @@ function setupHomeScreen() {
 
     if (indiCard) {
         indiCard.addEventListener('click', () => {
-            console.log('Indicator card clicked');
-            document.getElementById('home-screen').classList.add('hidden');
-            document.getElementById('indicator-flow').classList.remove('hidden');
-            showIndiStep(1);
+            // 開発中のためロック中
         });
     }
 
